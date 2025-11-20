@@ -6,6 +6,7 @@ from database.database import Database
 from services.auth_service import AuthService
 from llm.llm_client import generate_test_from_text
 
+
 # Инициализация БД
 db = Database('database/tutoring.db')
 auth_service = AuthService(db)
@@ -283,13 +284,10 @@ def tests():
 
 @app.route('/tests/1')
 def test_1():
-    """Тест 1 - генерация на основе материала z5.txt"""
     if 'user_id' not in session:
         return "Доступ запрещен. Необходима авторизация.", 403
     
     try:
-        # Загружаем материал z5.txt
-        # Путь относительно директории, где находится app.py (tutor/)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         material_path = os.path.join(base_dir, 'llm', 'materials', 'z5.txt')
         
@@ -298,12 +296,10 @@ def test_1():
         
         with open(material_path, 'r', encoding='utf-8') as f:
             material_text = f.read()
-        
-        # Генерируем тест на основе материала
+
         print(f"📝 Генерация теста из материала z5.txt...")
-        generated_test = generate_test_from_text(material_text, material_name="z5")
-        
-        # Сохраняем в сессии для отображения
+        generated_test = generate_test_from_text(material_text)
+
         session['generated_test'] = generated_test
         session['test_material'] = material_text
         session['test_material_name'] = 'z5'
@@ -495,7 +491,6 @@ def student_tests():
 
 @app.route('/test-result')
 def test_result():
-    """Страница с результатами генерации теста"""
     generated_test = session.get('generated_test', '')
     test_material = session.get('test_material', '')
 
@@ -507,17 +502,15 @@ def test_result():
 
 @app.route('/generate-test', methods=['POST'])
 def generate_test():
-    """Генерация теста из материала"""
     data = request.get_json()
     material = data.get("text", "")
-    material_name = data.get("material_name", "z5")  # По умолчанию "z5"
+    material_name = data.get("material_name", "z5")
 
     if not material:
         return jsonify({"test": "❌ Ошибка: Не указан материал для генерации теста"}), 400
 
     result = generate_test_from_text(material, material_name=material_name)
 
-    # Сохраняем результат в сессии для отображения на отдельной странице
     session['generated_test'] = result
     session['test_material'] = material
 

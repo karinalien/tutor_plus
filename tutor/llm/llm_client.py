@@ -1,36 +1,52 @@
-import os
+import time
 import requests
 from requests.exceptions import ConnectionError, Timeout, RequestException
-from full_prompt import build_prompt
 
 LMSTUDIO_URL = "http://127.0.0.1:12345/v1/chat/completions"
-LMSTUDIO_MODEL = "google/gemma-3-4b"
-MATERIAL_FILE = "z5.txt"
+LMSTUDIO_MODEL = "qwen2.5-1.5b-instruct"
 
+def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens: int = 3000):
 
-def load_material() -> str:
-    if not os.path.exists(MATERIAL_FILE):
-        return f"❌ Файл {MATERIAL_FILE} не найден!"
+    prompt = f"""
+Ты — генератор образовательных тестов.
+Создай 5–7 тестовых вопросов по материалу ниже.
 
-    with open(MATERIAL_FILE, "r", encoding="utf-8") as f:
-        return f.read()
+Требования к тестам:
+- Каждый вопрос должен быть САМОСТОЯТЕЛЬНЫМ.
+- У каждого вопроса должно быть 4 варианта ответа (A, B, C, D).
+- Только один вариант ответа должен быть правильным.
+- Вопрос не должен ссылаться на материалы или внешний контекст.
+- Если для решения требуется правило, формула или алгоритм — вставь краткое описание прямо в текст вопроса.
+- Не используй символы вроде "#", "*". Только кириллица и цифры.
 
+Шаги:
+1) Проанализируй материал и выдели ключевые понятия.
+2) Определи потенциально непонятные элементы и включи их описание в вопрос.
+3) Проверь, что каждый вопрос содержит всё, что нужно ученику.
+4) Оставь итоговые вопросы, строго соблюдая формат.
 
-def generate_test_from_text(max_retries=2):
-    material_text = load_material()
-    if material_text.startswith("❌"):
-        return material_text
-    prompt = build_prompt(material_text)
+Материал для анализа:
+{material_text}
+
+Формат вывода:
+1. [Вопрос]
+   A) ...
+   B) ...
+   C) ...
+   D) ...
+   Правильный ответ: X
+
+2. ...
+""".strip()
 
     payload = {
         "model": LMSTUDIO_MODEL,
         "messages": [
-            {"role": "system",
-             "content": "Ты — генератор тестов. Ты создаешь вопросы строго по требованиям пользователя."},
+            {"role": "system", "content": "Ты — генератор тестов. Ты создаешь вопросы строго по требованиям пользователя."},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.1,
-        "max_tokens": 4000
+        "max_tokens": max_tokens
     }
 
     for attempt in range(max_retries + 1):
@@ -39,6 +55,7 @@ def generate_test_from_text(max_retries=2):
 
             if response.status_code == 503:
                 if attempt < max_retries:
+                    time.sleep(1)
                     continue
                 return "❌ LM Studio ответил 503 (модель не готова или перегружена)."
 
@@ -51,21 +68,21 @@ def generate_test_from_text(max_retries=2):
             response.raise_for_status()
 
             data = response.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            if not content:
+            choices = data.get("choices")
+            if not choices or not isinstance(choices, list):
                 return "❌ Ошибка: пустой ответ от модели."
+
+            content = choices[0].get("message", {}).get("content", "")
+            if not content:
+                return "❌ Ошибка: модель вернула пустой текст."
 
             return content.strip()
 
-        except ConnectionError:
+        except (ConnectionError, Timeout):
             if attempt < max_retries:
+                time.sleep(1)
                 continue
-            return "❌ Ошибка подключения: LM Studio не отвечает."
-
-        except Timeout:
-            if attempt < max_retries:
-                continue
-            return "❌ Таймаут: модель слишком долго формирует ответ."
+            return "❌ Ошибка подключения или таймаут: LM Studio не отвечает."
 
         except RequestException as e:
             return f"❌ Ошибка HTTP: {str(e)}"
