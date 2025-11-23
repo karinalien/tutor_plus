@@ -411,6 +411,26 @@
         }
         .nav-left  { left: 10px; }
         .nav-right { right: 10px; }
+        .btn-finish {
+            background: linear-gradient(135deg, #ff6b6b, #fa5252);
+            color: #fff;
+        }
+
+        .btn-finish:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(250, 82, 82, 0.3);
+        }
+
+        .btn-done {
+            background: #ced4da;
+            color: #495057;
+            cursor: default;
+            box-shadow: none;
+        }
+        .btn-done:hover {
+            transform: none;
+            box-shadow: none;
+        }
     </style>
 
 </head>
@@ -497,8 +517,6 @@
                               <th>Действия</th>
                             </tr>
                           </thead>
-
-                          <!-- сюда JS рисует строки -->
                           <tbody id="schedule-body">
                             <tr><td colspan="3" style="padding:16px;">Загрузка…</td></tr>
                           </tbody>
@@ -509,23 +527,23 @@
                     <section class="quick-stats">
                         <div class="stat-card">
                             <h3>🎯 Занятий сегодня</h3>
-                            <p class="stat-number">5</p>
-                            <p class="stat-description">3 ОГЭ + 2 ЕГЭ</p>
+                            <p class="stat-number" id="statLessonsCount">0</p>
+                            <p class="stat-description" id="statLessonsText">Нет занятий</p>
                         </div>
                         <div class="stat-card">
                             <h3>⏱️ Общее время</h3>
-                            <p class="stat-number">7.5ч</p>
+                            <p class="stat-number" id="statTotalTime">0 ч</p>
                             <p class="stat-description">Академических часов</p>
                         </div>
                         <div class="stat-card">
                             <h3>💰 Прогноз дохода</h3>
-                            <p class="stat-number">7,500₽</p>
-                            <p class="stat-description">За сегодняшний день</p>
+                            <p class="stat-number"><span id="statIncome">0</span>₽</p>
+                            <p class="stat-description">За выбранный день</p>
                         </div>
                         <div class="stat-card">
                             <h3>📚 Материалы</h3>
-                            <p class="stat-number">3</p>
-                            <p class="stat-description">Нужно подготовить</p>
+                            <p class="stat-number" id="statMaterialsCount">0</p>
+                            <p class="stat-description" id="statMaterialsText">Нужно подготовить</p>
                         </div>
                     </section>
                 </div>

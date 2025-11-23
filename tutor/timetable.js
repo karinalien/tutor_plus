@@ -1,27 +1,56 @@
-// timetable.js — динамическое расписание (под твои кнопки и верстку)
+// timetable.js — динамическое расписание + журнал уроков
 
 let currentDate = new Date();
 const DOW = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 const RU_DOW = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
 
+const STORAGE_KEY = 'tutor_lessons_history_v1';
+
+// ---------- утилиты ----------
+
 function pad(n){ return n.toString().padStart(2,'0'); }
-const MONTHS_GEN = [
-  'января','февраля','марта','апреля','мая','июня',
-  'июля','августа','сентября','октября','ноября','декабря'
-];
 
 function fmtDateTitle(d){
-  const weekday = RU_DOW[(d.getDay()+6)%7].toLowerCase(); // понедельник, вторник...
-  const day = d.getDate();                                // без ведущего нуля
-  const month = MONTHS_GEN[d.getMonth()];                 // РОДИТЕЛЬНЫЙ падеж
-  const year = d.getFullYear();
-  return `${weekday}, ${day} ${month} ${year} г.`;
+  const dd = pad(d.getDate());
+  const month = d.toLocaleDateString('ru-RU',{month:'long'});
+  const year  = d.getFullYear();
+  const dow   = RU_DOW[(d.getDay()+6)%7].toLowerCase();
+  return `${dow}, ${dd} ${month} ${year} г.`;
 }
+
 function toDowName(d){
-  // JS: Sunday=0..Saturday=6 → monday..sunday
   const js = d.getDay();
   return DOW[(js + 6) % 7];
 }
+
+function isoDate(d){
+  const y = d.getFullYear();
+  const m = pad(d.getMonth()+1);
+  const day = pad(d.getDate());
+  return `${y}-${m}-${day}`;
+}
+
+// ---------- работа с localStorage ----------
+
+function loadLessonsFromStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.warn('Ошибка чтения localStorage', e);
+    return [];
+  }
+}
+
+function saveLessonsToStorage(list){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.warn('Ошибка записи localStorage', e);
+  }
+}
+
+// ---------- расписание на день ----------
 
 async function loadScheduleForCurrentDay(){
   // заголовок с датой
@@ -49,46 +78,54 @@ async function loadScheduleForCurrentDay(){
       return;
     }
 
+    const dateStr = isoDate(currentDate);
+
     body.innerHTML = items.map(s => {
       const time = `${(s.start_time||'').slice(0,5)} — ${(s.end_time||'').slice(0,5)}`;
       const fullName = [s.student_name, s.student_last_name].filter(Boolean).join(' ') || 'Ученик';
       const topic = s.topic_title || 'Занятие';
-      const exam = (s.exam_type || '').toLowerCase(); // если вернется с бэка
+      const examType = (s.exam_type || '').toUpperCase();
+      const examClass = (s.exam_type || '').toLowerCase();
+      const initials = fullName.split(' ').map(w => w[0]||'').join('').slice(0,2).toUpperCase();
+      const price = s.lesson_price || 0;
 
-      // классы и верстка под твой стиль
       return `
         <tr class="schedule-row">
           <td class="time-slot">${time}</td>
           <td>
-            <div class="lesson-card ${exam}">
+            <div class="lesson-card ${examClass}">
               <div class="lesson-header">
                 <div class="student-info">
-                  <div class="student-avatar">${
-                    fullName ? fullName.split(' ').map(w => w[0]||'').join('').slice(0,2).toUpperCase() : 'У'
-                  }</div>
+                  <div class="student-avatar">${initials}</div>
                   <div class="student-details">
                     <h4>${fullName}</h4>
-                    <p>${(s.grade ? s.grade + ' класс • ' : '') + (s.exam_type ? s.exam_type.toUpperCase() : '')}</p>
+                    <p>${examType}</p>
                   </div>
                 </div>
-                <span class="lesson-type ${exam}">${s.exam_type ? s.exam_type.toUpperCase() : ''}</span>
+                <span class="lesson-type ${examClass}">${examType}</span>
               </div>
               <div class="lesson-details">
                 <div class="lesson-topic">${topic}</div>
-                <div class="lesson-description">${s.lesson_link ? `Ссылка: ${s.lesson_link}` : ''}</div>
               </div>
               <div class="lesson-actions">
-                <button class="btn-small btn-start">Начать</button>
+                <button
+                  class="btn-small btn-start lesson-state-btn"
+                  data-schedule-id="${s.id}"
+                  data-student="${fullName}"
+                  data-exam="${examType}"
+                  data-price="${price}"
+                  data-time="${time}"
+                >Начать</button>
                 <button class="btn-small btn-edit">✏️</button>
               </div>
             </div>
           </td>
-          <td class="actions-col">
-            <!-- при желании продублировать кнопки -->
-          </td>
+          <td class="actions-col"></td>
         </tr>
       `;
     }).join('');
+
+    attachLessonButtons(dateStr);
 
   } catch (e) {
     console.error('Ошибка загрузки расписания:', e);
@@ -96,7 +133,109 @@ async function loadScheduleForCurrentDay(){
   }
 }
 
-// Эти функции вызываются из HTML через onclick
+// ---------- логика кнопок Начать / Завершить / Проведен ----------
+
+function attachLessonButtons(dateStr){
+  const lessons = loadLessonsFromStorage();
+  document.querySelectorAll('.lesson-state-btn').forEach(btn => {
+    const scheduleId = btn.dataset.scheduleId;
+    const key = `${dateStr}-${scheduleId}`;
+    const record = lessons.find(l => l.key === key);
+
+    // если урок уже проведен — сразу показываем "Проведен"
+    if (record) {
+      setButtonDone(btn);
+    } else {
+      btn.dataset.state = 'idle';
+      btn.onclick = onLessonButtonClick; // перезаписываем хендлер, чтобы не плодить слушатели
+    }
+  });
+}
+
+function onLessonButtonClick(e){
+  const btn = e.currentTarget;
+  const state = btn.dataset.state || 'idle';
+
+  if (state === 'idle') {
+    // Начать → Завершить
+    btn.dataset.state = 'running';
+    btn.textContent = 'Завершить';
+    btn.classList.remove('btn-start');
+    btn.classList.add('btn-finish');
+    return;
+  }
+
+  if (state === 'running') {
+    // Завершить → Проведен + запись в журнал
+    btn.dataset.state = 'done';
+    setButtonDone(btn);
+    saveFinishedLessonFromButton(btn);
+  }
+}
+
+function setButtonDone(btn){
+  btn.textContent = 'Проведен';
+  btn.classList.remove('btn-start','btn-finish');
+  btn.classList.add('btn-done');
+  btn.disabled = true;
+}
+
+function saveFinishedLessonFromButton(btn) {
+    const dateStr    = isoDate(currentDate);
+    const scheduleId = btn.dataset.scheduleId;
+    const key        = `${dateStr}-${scheduleId}`;
+
+    // ---- localStorage ----
+    const lessons = loadLessonsFromStorage();
+    if (lessons.some(l => l.key === key)) {
+        return; // уже записано в хранилище
+    }
+
+    const lessonObj = {
+        key,
+        date: dateStr,
+        schedule_id: Number(scheduleId),
+        student: btn.dataset.student || "",
+        exam: btn.dataset.exam || "",
+        price: Number(btn.dataset.price || 0),
+        time: btn.dataset.time || "",
+        status: "pending"
+    };
+
+    lessons.push(lessonObj);
+    saveLessonsToStorage(lessons);
+
+    // ---- отправка в БД ----
+    fetch("/api/income-lessons", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            date: lessonObj.date,
+            student: lessonObj.student,
+            exam: lessonObj.exam,
+            price: lessonObj.price,
+            status: "pending"
+        })
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log("💾 Урок добавлен в БД:", data.lesson_id);
+            } else {
+                console.error("❌ Ошибка записи в БД:", data.message);
+            }
+        })
+        .catch(err => {
+            console.error("❌ Ошибка сети:", err);
+        });
+}
+
+
+
+// ---------- навигация по дням ----------
+
 window.previousDay = function(){
   currentDate.setDate(currentDate.getDate() - 1);
   loadScheduleForCurrentDay();
@@ -106,7 +245,8 @@ window.nextDay = function(){
   loadScheduleForCurrentDay();
 }
 
-// Первичная загрузка (и защита от неавторизованных)
+// ---------- старт страницы ----------
+
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/check-auth')
     .then(r => r.json())

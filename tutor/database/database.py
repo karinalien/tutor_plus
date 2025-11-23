@@ -326,22 +326,31 @@ class Database:
         try:
             cursor = connection.cursor()
             cursor.execute("""
-                SELECT s.id, s.day_of_week, s.start_time, s.end_time, s.lesson_link, s.status,
-                       t.title as topic_title, 
-                       u.first_name as student_name, u.last_name as student_last_name
+                SELECT 
+                    s.id,
+                    s.day_of_week,
+                    s.start_time,
+                    s.end_time,
+                    s.lesson_link,
+                    s.status,
+                    t.title        AS topic_title,
+                    u.first_name   AS student_name,
+                    u.last_name    AS student_last_name,
+                    u.lesson_price AS lesson_price,
+                    u.exam_type    AS exam_type
                 FROM schedule s
                 JOIN topics t ON s.topic_id = t.id
-                JOIN users u ON s.student_id = u.id
+                JOIN users  u ON s.student_id = u.id
                 WHERE s.tutor_id = ? AND s.status = 'active'
                 ORDER BY 
                     CASE s.day_of_week
-                        WHEN 'monday' THEN 1
-                        WHEN 'tuesday' THEN 2
-                        WHEN 'wednesday' THEN 3
+                        WHEN 'monday'   THEN 1
+                        WHEN 'tuesday'  THEN 2
+                        WHEN 'wednesday'THEN 3
                         WHEN 'thursday' THEN 4
-                        WHEN 'friday' THEN 5
+                        WHEN 'friday'   THEN 5
                         WHEN 'saturday' THEN 6
-                        WHEN 'sunday' THEN 7
+                        WHEN 'sunday'   THEN 7
                     END,
                     s.start_time
             """, (tutor_id,))
@@ -382,3 +391,72 @@ class Database:
             return 0
         finally:
             connection.close()
+
+    # ====== Блок работы с доходами (income_lessons) ======
+
+    def add_income_lesson(self, tutor_id, date, student, exam, price, status='pending'):
+        """
+        Добавить запись о проведённом занятии в income_lessons.
+        """
+        conn = self.get_connection()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO income_lessons (tutor_id, lesson_date, student_name, exam, price, status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (tutor_id, date, student, exam, price, status))
+        lesson_id = cur.lastrowid
+        conn.commit()
+        conn.close()
+        return lesson_id
+
+    def get_income_lessons(self, tutor_id):
+        """
+        Получить все записи доходов данного репетитора.
+        Поля приводим к фронтенд-формату: date, student, exam, price, status.
+        """
+        conn = self.get_connection()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                id,
+                tutor_id,
+                lesson_date   AS date,
+                student_name  AS student,
+                exam,
+                price,
+                status,
+                created_at
+            FROM income_lessons
+            WHERE tutor_id = ?
+            ORDER BY lesson_date DESC, id DESC
+        """, (tutor_id,))
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def update_income_status(self, lesson_id, tutor_id, new_status):
+        """
+        Обновить статус оплаты занятия.
+        """
+        conn = self.get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE income_lessons
+               SET status = ?
+             WHERE id = ? AND tutor_id = ?
+        """, (new_status, lesson_id, tutor_id))
+        conn.commit()
+        conn.close()
+
+    def reset_income(self, tutor_id):
+        """
+        Полностью очистить доходы репетитора.
+        """
+        conn = self.get_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM income_lessons WHERE tutor_id = ?", (tutor_id,))
+        conn.commit()
+        conn.close()
+

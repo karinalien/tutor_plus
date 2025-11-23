@@ -452,6 +452,89 @@ def api_get_students():
     except Exception as e:
         print(f"❌ Ошибка при получении учеников: {e}")
         return jsonify({'success': False, 'message': 'Ошибка при загрузке учеников'}), 500
+# =====================================
+# API ДОХОДОВ
+# =====================================
+
+@app.route('/api/income-lessons', methods=['GET'])
+def api_income_get():
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'not authorized'}), 403
+
+    tutor_id = session['user_id']
+    lessons = db.get_income_lessons(tutor_id)
+
+    # Приводим ключи к формату, который ждёт фронтенд
+    normalized = []
+    for l in lessons:
+        normalized.append({
+            "id": l.get("id"),
+            "date": l.get("date"),           # уже нормализовано в db.get_income_lessons()
+            "student": l.get("student"),
+            "exam": l.get("exam"),
+            "price": l.get("price"),
+            "status": l.get("status"),
+            "created_at": l.get("created_at")
+        })
+
+    return jsonify({
+        "success": True,
+        "lessons": normalized
+    })
+
+
+
+@app.route('/api/income-lessons', methods=['POST'])
+def api_income_add():
+    """Добавить новое проведённое занятие"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'success': False, 'message': 'not authorized'}), 403
+
+    try:
+        data = request.get_json(force=True) or {}
+        tutor_id = session['user_id']
+
+        lesson_id = db.add_income_lesson(
+            tutor_id=tutor_id,
+            date=data.get('date'),
+            student=data.get('student'),
+            exam=data.get('exam'),
+            price=int(data.get('price') or 0),
+            status=data.get('status', 'pending')
+        )
+
+        print(f"✅ Доход: добавлен урок {lesson_id} для репетитора {tutor_id}")
+        return jsonify({'success': True, 'lesson_id': lesson_id})
+
+    except Exception as e:
+        # чтоб не было HTML-500, а всегда JSON
+        print(f"❌ Ошибка в api_income_add: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+
+@app.route('/api/income-lessons/<int:lesson_id>/status', methods=['POST'])
+def api_income_status(lesson_id):
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'not authorized'}), 403
+
+    data = request.get_json()
+    new_status = data.get('status')
+
+    if new_status not in ('pending', 'paid', 'overdue'):
+        return jsonify({'error': 'bad status'}), 400
+
+    db.update_income_status(lesson_id, session['user_id'], new_status)
+    return jsonify({'success': True})
+
+
+@app.route('/api/income-lessons/reset', methods=['POST'])
+def api_income_reset():
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'not authorized'}), 403
+
+    db.reset_income(session['user_id'])
+    return jsonify({'success': True})
 
 @app.route('/income')
 def income():
@@ -874,6 +957,8 @@ def update_download_stats(material_id):
     except Exception as e:
         print(f"❌ Ошибка обновления статистики: {e}")
         return jsonify({'success': False}), 500
+
+
 
 if __name__ == '__main__':
     print("Flask сервер запущен!")

@@ -215,7 +215,7 @@
         }
 
         .payment-total {
-            font-size: 1.5em;
+            font-size: 1.4em;
             font-weight: bold;
             color: #88746b;
         }
@@ -230,8 +230,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #e9ecef;
+            font-size: 0.92em;
         }
 
         .payment-item:last-child {
@@ -267,115 +268,25 @@
         .payment-amount {
             font-weight: 600;
             color: #88746b;
+            white-space: nowrap;
+            font-size: 0.95em;
         }
 
         .payment-count {
             color: #666;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            margin-left: 6px;
         }
 
-        /* График и детализация */
         .charts-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
             margin-bottom: 30px;
         }
-
-        @media (max-width: 1024px) {
-            .charts-details {
-                grid-template-columns: 1fr;
-            }
+        .charts-details .income-details {
+            max-width: 980px;
+            margin: 0 auto;
         }
 
-        .chart-container {
-            background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #88746b;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #88746b, #6B5B73);
-        }
-
-        .chart-title {
-            color: #88746b;
-            font-size: 1.3em;
-            font-weight: 600;
-            margin: 0 0 25px 0;
-            text-align: center;
-        }
-
-        .chart-placeholder {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-
-        .chart-bars {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            height: 200px;
-            margin-top: 30px;
-        }
-
-        .chart-bar {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bar {
-            width: 40px;
-            border-radius: 8px 8px 0 0;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .bar:hover {
-            transform: scale(1.05);
-        }
-
-        .bar-paid {
-            background: linear-gradient(to top, #51cf66, #40c057);
-        }
-
-        .bar-pending {
-            background: linear-gradient(to top, #ffd43b, #fab005);
-        }
-
-        .bar-overdue {
-            background: linear-gradient(to top, #ff6b6b, #fa5252);
-        }
-
-        .bar-label {
-            font-size: 0.8em;
-            color: #666;
-            font-weight: 600;
-        }
-
-        .bar-value {
-            position: absolute;
-            top: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8em;
-            font-weight: 600;
-            color: #88746b;
-        }
-
-        /* Детализация доходов */
+        /* Блок проведённых занятий */
         .income-details {
             background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
             border-radius: 15px;
@@ -397,20 +308,20 @@
         .details-header {
             background: linear-gradient(135deg, #88746b, #6B5B73);
             color: #FEFCF8;
-            padding: 20px 30px;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .details-title {
-            font-size: 1.3em;
+            font-size: 1.1em;
             font-weight: 600;
             margin: 0;
         }
 
         .details-summary {
-            font-size: 1.1em;
+            font-size: 0.95em;
             opacity: 0.9;
         }
 
@@ -422,28 +333,36 @@
         .income-table th {
             background: rgba(136, 116, 107, 0.1);
             color: #88746b;
-            padding: 15px;
-            text-align: left;
+            padding: 10px 12px;
+            text-align: center;
             font-weight: 600;
             border-bottom: 2px solid #88746b;
+            font-size: 0.9rem;
         }
 
         .income-table td {
-            padding: 15px;
+            padding: 10px 12px;
             border-bottom: 1px solid #e9ecef;
             color: #666;
+            text-align: center;
+            font-size: 0.9rem;
         }
 
         .income-table tr:hover {
             background: rgba(136, 116, 107, 0.05);
         }
 
+        .income-table.conducted-table th,
+        .income-table.conducted-table td {
+            font-size: 0.85em;
+        }
+
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
+            padding: 6px 14px;
+            border-radius: 18px;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: white;
+            color: #fff;
         }
 
         .status-paid {
@@ -459,18 +378,58 @@
             background: #ff6b6b;
         }
 
-        .student-avatar-small {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #88746b, #6B5B73);
+        .btn-status {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #FEFCF8;
-            font-weight: bold;
+            min-width: 110px;
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 0 4px;
+        }
+
+        .btn-status-paid {
+            background: #40c057;
+            color: #fff;
+        }
+        .btn-status-paid:hover {
+            box-shadow: 0 3px 10px rgba(64, 192, 87, 0.3);
+        }
+
+        .btn-status-unpaid {
+            background: #fa5252;
+            color: #fff;
+        }
+        .btn-status-unpaid:hover {
+            box-shadow: 0 3px 10px rgba(250, 82, 82, 0.3);
+        }
+
+        .btn-status:disabled {
+            opacity: 0.55;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        .btn-reset-lessons {
+            margin: 8px 16px 14px 0;
+            padding: 6px 14px;
+            border-radius: 18px;
+            border: 1px solid #88746b;
+            background: #FEFCF8;
+            color: #88746b;
             font-size: 0.8em;
-            margin-right: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            float: right;
+        }
+
+        .btn-reset-lessons:hover {
+            background: rgba(136,116,107,0.1);
         }
 
         @media (max-width: 768px) {
@@ -510,327 +469,609 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar">
-            <div class="nav-brand">
-                <span>🎓 Кабинет репетитора</span>
+<div class="container">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span>🎓 Кабинет репетитора</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Главная</a></li>
+            <li><a href="/cabinet">Выйти</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-container">
+        <!-- Боковое меню -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3 style="color: #FEFCF8; margin: 0;">Панель управления</h3>
             </div>
-            <ul class="nav-menu">
-                <li><a href="/">Главная</a></li>
-                <li><a href="/cabinet">Выйти</a></li>
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="/tutor-cabinet" style="display: block; text-decoration: none; color: inherit;">
+                        📊 Обзор
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/timetable" style="display: block; text-decoration: none; color: inherit;">
+                        📅 Расписание
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/materials" style="display: block; text-decoration: none; color: inherit;">
+                        📚 Материалы
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/students" style="display: block; text-decoration: none; color: inherit;">
+                        👥 Ученики
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/reschedule" style="display: block; text-decoration: none; color: inherit;">
+                        🔄 Запросы на перенос
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="/income" style="display: block; text-decoration: none; color: inherit;">
+                        💰 Доходы
+                    </a>
+                </li>
             </ul>
-        </nav>
+        </div>
 
-        <div class="main-container">
-            <!-- Боковое меню -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <h3 style="color: #FEFCF8; margin: 0;">Панель управления</h3>
-                </div>
-                <ul class="sidebar-menu">
-                    <li class="menu-item">
-                        <a href="/tutor-cabinet" style="display: block; text-decoration: none; color: inherit;">
-                            📊 Обзор
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/timetable" style="display: block; text-decoration: none; color: inherit;">
-                            📅 Расписание
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/materials" style="display: block; text-decoration: none; color: inherit;">
-                            📚 Материалы
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/students" style="display: block; text-decoration: none; color: inherit;">
-                            👥 Ученики
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/reschedule" style="display: block; text-decoration: none; color: inherit;">
-                            🔄 Запросы на перенос
-                        </a>
-                    </li>
-                    <li class="menu-item active">
-                        <a href="/income" style="display: block; text-decoration: none; color: inherit;">
-                            💰 Доходы
-                        </a>
-                    </li>
-                </ul>
-            </div>
+        <!-- Основной контент -->
+        <div class="content-area">
+            <div id="income" class="page-section active">
+                <header class="header">
+                    <h1>💰 Финансовые отчеты</h1>
+                    <p class="subtitle">Отслеживание доходов и финансовой статистики за 2025 год</p>
+                </header>
 
-            <!-- Основной контент -->
-            <div class="content-area">
-                <div id="income" class="page-section active">
-                    <header class="header">
-                        <h1>💰 Финансовые отчеты</h1>
-                        <p class="subtitle">Отслеживание доходов и финансовой статистики за 2025 год</p>
-                    </header>
+                <!-- Шапка с периодом и действиями -->
+                <section class="income-header">
+                    <div class="period-selector">
+                        <button class="period-btn active" onclick="changePeriod('month')">Месяц</button>
+                        <select id="month-select" class="period-btn" style="border: 2px solid #88746b; background: white;">
+                            <option value="2025-01">Январь 2025</option>
+                            <option value="2025-02">Февраль 2025</option>
+                            <option value="2025-03">Март 2025</option>
+                            <option value="2025-04">Апрель 2025</option>
+                            <option value="2025-05">Май 2025</option>
+                            <option value="2025-06">Июнь 2025</option>
+                            <option value="2025-07">Июль 2025</option>
+                            <option value="2025-08">Август 2025</option>
+                            <option value="2025-09">Сентябрь 2025</option>
+                            <option value="2025-10">Октябрь 2025</option>
+                            <option value="2025-11">Ноябрь 2025</option>
+                            <option value="2025-12">Декабрь 2025</option>
+                        </select>
+                    </div>
+                    <div class="export-actions">
+                        <button class="btn-export" onclick="exportData()">
+                            📊 Экспорт в Excel
+                        </button>
+                        <button class="btn-report" onclick="generateReport()">
+                            📈 Сформировать отчет
+                        </button>
+                    </div>
+                </section>
 
-                    <!-- Шапка с периодом и действиями -->
-                    <section class="income-header">
-                        <div class="period-selector">
-                            <button class="period-btn active" onclick="changePeriod('month')">Месяц</button>
-                            <button class="period-btn" onclick="changePeriod('quarter')">Квартал</button>
-                            <button class="period-btn" onclick="changePeriod('year')">Год</button>
-                            <select class="period-btn" style="border: 2px solid #88746b; background: white;">
-                                <option>Май 2025</option>
-                                <option>Апрель 2025</option>
-                                <option>Март 2025</option>
-                                <option>Февраль 2025</option>
-                                <option>Январь 2025</option>
-                            </select>
+                <!-- Основная статистика -->
+                <section class="main-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <h3 class="stat-title">Доход за текущий месяц</h3>
+                        <p class="stat-amount" id="stat-current-month">0 ₽</p>
+                        <span id="change-current-month" class="stat-change change-neutral">Без изменений</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <h3 class="stat-title">Прогноз на месяц</h3>
+                        <p class="stat-amount" id="stat-forecast-month">0 ₽</p>
+                        <span id="change-forecast-month" class="stat-change change-neutral">Без изменений</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <h3 class="stat-title">Средний доход за занятие</h3>
+                        <p class="stat-amount" id="stat-avg-lesson">0 ₽</p>
+                        <span id="change-avg-lesson" class="stat-change change-neutral">Без изменений</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <h3 class="stat-title">Всего заработано в 2025</h3>
+                        <p class="stat-amount" id="stat-year-total">0 ₽</p>
+                        <span id="change-year-total" class="stat-change change-neutral">Без изменений</span>
+                    </div>
+                </section>
+
+                <!-- Статистика оплат -->
+                <section class="payment-stats">
+                    <!-- Статусы оплат — динамично -->
+                    <div class="payment-card">
+                        <div class="payment-header">
+                            <h3 class="payment-title">Статусы оплат</h3>
+                            <div class="payment-total" id="status-total">0 ₽</div>
                         </div>
-                        <div class="export-actions">
-                            <button class="btn-export" onclick="exportData()">
-                                📊 Экспорт в Excel
-                            </button>
-                            <button class="btn-report" onclick="generateReport()">
-                                📈 Сформировать отчет
-                            </button>
-                        </div>
-                    </section>
-
-                    <!-- Основная статистика -->
-                    <section class="main-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon">💰</div>
-                            <h3 class="stat-title">Доход за текущий месяц</h3>
-                            <p class="stat-amount">45,000 ₽</p>
-                            <span class="stat-change change-positive">+12% к прошлому месяцу</span>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon">📈</div>
-                            <h3 class="stat-title">Прогноз на месяц</h3>
-                            <p class="stat-amount">60,000 ₽</p>
-                            <span class="stat-change change-positive">+25% к текущему</span>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon">⏱️</div>
-                            <h3 class="stat-title">Средний доход за занятие</h3>
-                            <p class="stat-amount">1,500 ₽</p>
-                            <span class="stat-change change-neutral">Без изменений</span>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon">🎯</div>
-                            <h3 class="stat-title">Всего заработано в 2025</h3>
-                            <p class="stat-amount">320,000 ₽</p>
-                            <span class="stat-change change-positive">+18% к прошлому году</span>
-                        </div>
-                    </section>
-
-                    <!-- Статистика оплат -->
-                    <section class="payment-stats">
-                        <div class="payment-card">
-                            <div class="payment-header">
-                                <h3 class="payment-title">Статусы оплат за май</h3>
-                                <div class="payment-total">45,000 ₽</div>
+                        <div class="payment-details">
+                            <div class="payment-item">
+                                <div class="payment-label">
+                                    <span class="payment-badge badge-paid"></span>
+                                    Оплачено
+                                </div>
+                                <div>
+                                    <span class="payment-amount" id="paid-amount">0 ₽</span>
+                                    <span class="payment-count" id="paid-count">(0 занятий)</span>
+                                </div>
                             </div>
-                            <div class="payment-details">
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span class="payment-badge badge-paid"></span>
-                                        Оплачено
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">36,000 ₽</span>
-                                        <span class="payment-count">(24 занятия)</span>
-                                    </div>
+                            <div class="payment-item">
+                                <div class="payment-label">
+                                    <span class="payment-badge badge-pending"></span>
+                                    Ожидает оплаты
                                 </div>
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span class="payment-badge badge-pending"></span>
-                                        Ожидает оплаты
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">7,500 ₽</span>
-                                        <span class="payment-count">(5 занятий)</span>
-                                    </div>
+                                <div>
+                                    <span class="payment-amount" id="pending-amount">0 ₽</span>
+                                    <span class="payment-count" id="pending-count">(0 занятий)</span>
                                 </div>
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span class="payment-badge badge-overdue"></span>
-                                        Просрочено
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">1,500 ₽</span>
-                                        <span class="payment-count">(1 занятие)</span>
-                                    </div>
+                            </div>
+                            <div class="payment-item">
+                                <div class="payment-label">
+                                    <span class="payment-badge badge-overdue"></span>
+                                    Просрочено
+                                </div>
+                                <div>
+                                    <span class="payment-amount" id="overdue-amount">0 ₽</span>
+                                    <span class="payment-count" id="overdue-count">(0 занятий)</span>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="payment-card">
-                            <div class="payment-header">
-                                <h3 class="payment-title">Распределение по экзаменам</h3>
-                                <div class="payment-total">45,000 ₽</div>
-                            </div>
-                            <div class="payment-details">
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span style="color: #339af0;">🎓</span>
-                                        Подготовка к ЕГЭ
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">25,000 ₽</span>
-                                        <span class="payment-count">(55%)</span>
-                                    </div>
-                                </div>
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span style="color: #51cf66;">🎯</span>
-                                        Подготовка к ОГЭ
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">20,000 ₽</span>
-                                        <span class="payment-count">(45%)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- График и детализация -->
-                    <section class="charts-details">
-                        <!-- График оплат -->
-                        <div class="chart-container">
-                            <h3 class="chart-title">Статистика оплат за май 2025</h3>
-                            <div class="chart-bars">
-                                <div class="chart-bar">
-                                    <div class="bar bar-paid" style="height: 160px;">
-                                        <span class="bar-value">36,000₽</span>
-                                    </div>
-                                    <span class="bar-label">Оплачено</span>
-                                </div>
-                                <div class="chart-bar">
-                                    <div class="bar bar-pending" style="height: 80px;">
-                                        <span class="bar-value">7,500₽</span>
-                                    </div>
-                                    <span class="bar-label">Ожидает</span>
-                                </div>
-                                <div class="chart-bar">
-                                    <div class="bar bar-overdue" style="height: 30px;">
-                                        <span class="bar-value">1,500₽</span>
-                                    </div>
-                                    <span class="bar-label">Просрочено</span>
-                                </div>
-                            </div>
+                    <div class="payment-card">
+                        <div class="payment-header">
+                            <h3 class="payment-title">Распределение по экзаменам</h3>
+                            <div class="payment-total" id="exam-total">0 ₽</div>
                         </div>
 
-                        <!-- Детализация доходов -->
-                        <div class="income-details">
-                            <div class="details-header">
-                                <h3 class="details-title">Детализация доходов за май</h3>
-                                <div class="details-summary">30 занятий • 45,000 ₽</div>
-                            </div>
-                            <table class="income-table">
-                                <thead>
-                                    <tr>
-                                        <th>Дата</th>
-                                        <th>Ученик</th>
-                                        <th>Экзамен</th>
-                                        <th>Стоимость</th>
-                                        <th>Статус</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>20.05.2025</td>
-                                        <td><span class="student-avatar-small">АП</span>Алексей Петров</td>
-                                        <td>ОГЭ</td>
-                                        <td>1,500 ₽</td>
-                                        <td><span class="status-badge status-paid">Оплачено</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>19.05.2025</td>
-                                        <td><span class="student-avatar-small">ЕС</span>Елена Сидорова</td>
-                                        <td>ЕГЭ</td>
-                                        <td>2,000 ₽</td>
-                                        <td><span class="status-badge status-paid">Оплачено</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>18.05.2025</td>
-                                        <td><span class="student-avatar-small">ИК</span>Иван Козлов</td>
-                                        <td>ОГЭ</td>
-                                        <td>1,500 ₽</td>
-                                        <td><span class="status-badge status-pending">Ожидает</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>17.05.2025</td>
-                                        <td><span class="student-avatar-small">ОН</span>Ольга Новикова</td>
-                                        <td>ЕГЭ</td>
-                                        <td>2,000 ₽</td>
-                                        <td><span class="status-badge status-overdue">Просрочено</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>16.05.2025</td>
-                                        <td><span class="student-avatar-small">ДВ</span>Дмитрий Волков</td>
-                                        <td>ОГЭ</td>
-                                        <td>1,500 ₽</td>
-                                        <td><span class="status-badge status-paid">Оплачено</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="payment-details" id="exam-list">
                         </div>
-                    </section>
-                </div>
+                    </div>
+                </section>
+
+                <!-- Проведённые занятия -->
+                <section class="charts-details">
+                    <div class="income-details">
+                        <div class="details-header">
+                            <h3 class="details-title">Проведённые занятия</h3>
+                            <div class="details-summary" id="doneLessonsSummary">0 занятий • 0 ₽</div>
+                        </div>
+                        <table class="income-table conducted-table">
+                            <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th>Ученик</th>
+                                <th>Экзамен</th>
+                                <th>Стоимость</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                            </thead>
+                            <tbody id="doneLessonsBody">
+                            <tr>
+                                <td colspan="6" style="padding:14px;text-align:center;color:#777;">
+                                    Пока нет завершённых занятий
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <button id="resetLessons" class="btn-reset-lessons">
+                            Сбросить историю
+                        </button>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Функция для выделения активного пункта меню
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const menuItems = document.querySelectorAll('.menu-item');
+<script>
+    // ===== Навигация (подсветка пункта меню) =====
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.menu-item').forEach(item => {
+            const link = item.querySelector('a');
+            if (link && link.getAttribute('href') === currentPath) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
 
-            menuItems.forEach(item => {
-                const link = item.querySelector('a');
-                if (link && link.getAttribute('href') === currentPath) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
+        initIncomePage();
+    });
+
+    // ===== Глобальный кэш занятий из БД =====
+    let allLessons = [];
+
+    async function fetchLessonsFromServer() {
+        try {
+            const resp = await fetch('/api/income-lessons');
+            if (!resp.ok) {
+                console.error('Ошибка загрузки занятий', resp.status);
+                allLessons = [];
+                return;
+            }
+            const data = await resp.json();
+            allLessons = data.lessons || [];
+            console.log('Загружены уроки доходов:', allLessons);
+        } catch (e) {
+            console.error('Ошибка сети при загрузке занятий', e);
+            allLessons = [];
+        }
+    }
+
+
+
+    function getSelectedMonthKey() {
+        const sel = document.getElementById('month-select');
+        return sel ? sel.value : null;   // '2025-11'
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+
+    function formatMoney(val) {
+        const num = Number(val) || 0;
+        return num.toLocaleString('ru-RU') + '\u00A0₽';
+    }
+
+    function ending(n) {
+        n = Math.abs(n) % 100;
+        const n1 = n % 10;
+        if (n > 10 && n < 20) return 'ий';
+        if (n1 > 1 && n1 < 5) return 'ия';
+        if (n1 === 1) return 'ие';
+        return 'ий';
+    }
+
+    // ---------- Статусы оплат (только занятия выбранного месяца) ----------
+    function updateStatusCard(monthLessons) {
+        let paidSum = 0, pendingSum = 0, overdueSum = 0;
+        let paidCnt = 0, pendingCnt = 0, overdueCnt = 0;
+
+        monthLessons.forEach(l => {
+            const price = Number(l.price) || 0;
+            if (l.status === 'paid') {
+                paidSum += price;
+                paidCnt++;
+            } else if (l.status === 'overdue') {
+                overdueSum += price;
+                overdueCnt++;
+            } else {
+                pendingSum += price;
+                pendingCnt++;
+            }
+        });
+
+        const totalSum = paidSum + pendingSum + overdueSum;
+
+        document.getElementById('paid-amount').textContent    = formatMoney(paidSum);
+        document.getElementById('pending-amount').textContent = formatMoney(pendingSum);
+        document.getElementById('overdue-amount').textContent = formatMoney(overdueSum);
+        document.getElementById('status-total').textContent   = formatMoney(totalSum);
+
+        document.getElementById('paid-count').textContent =
+            `(${paidCnt} занят${ending(paidCnt)})`;
+        document.getElementById('pending-count').textContent =
+            `(${pendingCnt} занят${ending(pendingCnt)})`;
+        document.getElementById('overdue-count').textContent =
+            `(${overdueCnt} занят${ending(overdueCnt)})`;
+    }
+
+    // ---------- Верхние четыре карточки сумм ----------
+    function updateMainStats(monthLessons, allLessons) {
+        let paidMonth = 0, totalMonth = 0, paidCountMonth = 0;
+
+        monthLessons.forEach(l => {
+            const price = Number(l.price) || 0;
+            totalMonth += price;
+            if (l.status === 'paid') {
+                paidMonth += price;
+                paidCountMonth++;
+            }
+        });
+
+        let yearPaid = 0;
+        allLessons.forEach(l => {
+            if (l.status === 'paid') {
+                yearPaid += Number(l.price) || 0;
+            }
+        });
+
+        const avg = paidCountMonth ? Math.round(paidMonth / paidCountMonth) : 0;
+
+        document.getElementById('stat-current-month').textContent  = formatMoney(paidMonth);
+        document.getElementById('stat-forecast-month').textContent = formatMoney(totalMonth);
+        document.getElementById('stat-year-total').textContent     = formatMoney(yearPaid);
+        document.getElementById('stat-avg-lesson').textContent     =
+            (avg || 0).toLocaleString('ru-RU') + ' ₽';
+    }
+
+    // ---------- Распределение по экзаменам (по ВСЕМ оплаченных) ----------
+    function updateExamDistribution(allLessons) {
+        const paid = allLessons.filter(l => l.status === 'paid');
+        const stats = {};
+        paid.forEach(l => {
+            const exam = l.exam || 'Без экзамена';
+            if (!stats[exam]) stats[exam] = 0;
+            stats[exam] += Number(l.price) || 0;
+        });
+
+        const totalPaid = paid.reduce((acc, l) => acc + (Number(l.price) || 0), 0);
+
+        const examTotal = document.getElementById('exam-total');
+        const container = document.getElementById('exam-list');
+
+        if (examTotal) examTotal.textContent = formatMoney(totalPaid);
+        if (!container) return;
+
+        if (!totalPaid) {
+            container.innerHTML = `
+                <div style="text-align:center; color:#888; padding:10px 0;">
+                    Нет оплаченных занятий
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = Object.entries(stats).map(([exam, sum]) => {
+            const percent = Math.round(sum / totalPaid * 100);
+            return `
+                <div class="payment-item">
+                    <div class="payment-label">
+                        <span style="color:#555;">🎓</span>
+                        ${exam}
+                    </div>
+                    <div>
+                        <span class="payment-amount">${sum.toLocaleString('ru-RU')} ₽</span>
+                        <span class="payment-count">(${percent}%)</span>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // ---------- Вспомогалки для процентов ----------
+    function parseYear(dateStr) { return Number((dateStr || '').slice(0, 4)); }
+    function parseMonth(dateStr) { return Number((dateStr || '').slice(5, 7)); }
+
+    function getPrevMonth(year, month) {
+        if (month === 1) return { year: year - 1, month: 12 };
+        return { year, month: month - 1 };
+    }
+
+    function setChangeBadge(elementId, currentValue, previousValue, suffix) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        el.classList.remove('change-positive', 'change-negative', 'change-neutral');
+
+        if (!previousValue && !currentValue) {
+            el.textContent = 'Без изменений';
+            el.classList.add('change-neutral');
+            return;
+        }
+
+        if (!previousValue) {
+            el.textContent = `+${currentValue ? 100 : 0}% ${suffix}`;
+            el.classList.add('change-positive');
+            return;
+        }
+
+        const diff = ((currentValue - previousValue) / previousValue) * 100;
+        const rounded = Math.round(diff);
+
+        if (rounded > 0) {
+            el.textContent = `+${rounded}% ${suffix}`;
+            el.classList.add('change-positive');
+        } else if (rounded < 0) {
+            el.textContent = `${rounded}% ${suffix}`;
+            el.classList.add('change-negative');
+        } else {
+            el.textContent = 'Без изменений';
+            el.classList.add('change-neutral');
+        }
+    }
+
+    function updatePercentStats(allLessons, monthLessons, selectedMonthKey) {
+        const year  = Number(selectedMonthKey.slice(0, 4));
+        const month = Number(selectedMonthKey.slice(5, 7));
+
+        const prev   = getPrevMonth(year, month);
+        const prevKey = `${prev.year}-${String(prev.month).padStart(2, '0')}`;
+
+        const prevLessons = allLessons.filter(l => (l.date || '').slice(0, 7) === prevKey);
+
+        const paidMonth = monthLessons
+            .filter(l => l.status === 'paid')
+            .reduce((a, b) => a + (Number(b.price) || 0), 0);
+
+        const paidPrevMonth = prevLessons
+            .filter(l => l.status === 'paid')
+            .reduce((a, b) => a + (Number(b.price) || 0), 0);
+
+        const forecastMonth = monthLessons
+            .reduce((a, b) => a + (Number(b.price) || 0), 0);
+        const forecastPrev  = prevLessons
+            .reduce((a, b) => a + (Number(b.price) || 0), 0);
+
+        const avgMonth = monthLessons.length
+            ? forecastMonth / monthLessons.length : 0;
+        const avgPrev  = prevLessons.length
+            ? forecastPrev / prevLessons.length : 0;
+
+        const yearPaid = allLessons
+            .filter(l => l.status === 'paid' && parseYear(l.date) === year)
+            .reduce((a, b) => a + (Number(b.price) || 0), 0);
+
+        const yearPrevPaid = allLessons
+            .filter(l => l.status === 'paid' && parseYear(l.date) === year - 1)
+            .reduce((a, b) => a + (Number(b.price) || 0), 0);
+
+        setChangeBadge('change-current-month',  paidMonth,     paidPrevMonth, 'к прошлому месяцу');
+        setChangeBadge('change-forecast-month', forecastMonth, forecastPrev,  'к прошлому месяцу');
+        setChangeBadge('change-avg-lesson',     avgMonth,      avgPrev,       'к прошлому месяцу');
+        setChangeBadge('change-year-total',     yearPaid,      yearPrevPaid,  'к прошлому году');
+    }
+
+    // ---------- Таблица «Проведённые занятия» ----------
+    function renderDoneLessons(monthLessons) {
+        const tbody   = document.getElementById('doneLessonsBody');
+        const summary = document.getElementById('doneLessonsSummary');
+
+        if (!tbody) return;
+
+        if (!monthLessons.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="padding:14px;text-align:center;color:#777;">
+                        Пока нет завершённых занятий
+                    </td>
+                </tr>`;
+        } else {
+            tbody.innerHTML = monthLessons.map(l => {
+                let badgeClass = 'status-pending';
+                let badgeText  = 'Ожидает оплаты';
+                if (l.status === 'paid') {
+                    badgeClass = 'status-paid';
+                    badgeText  = 'Оплачено';
+                } else if (l.status === 'overdue') {
+                    badgeClass = 'status-overdue';
+                    badgeText  = 'Не оплачено';
                 }
-            });
+
+                const disabled = (l.status !== 'pending') ? 'disabled' : '';
+
+                return `
+                    <tr>
+                        <td>${formatDate(l.date)}</td>
+                        <td>${l.student || ''}</td>
+                        <td>${l.exam || ''}</td>
+                        <td>${formatMoney(l.price)}</td>
+                        <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+                        <td>
+                            <button class="btn-status btn-status-paid"
+                                    data-id="${l.id}"
+                                    data-action="paid"
+                                    ${disabled}>Оплачено</button>
+                            <button class="btn-status btn-status-unpaid"
+                                    data-id="${l.id}"
+                                    data-action="overdue"
+                                    ${disabled}>Не оплачено</button>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        tbody.querySelectorAll('.btn-status').forEach(btn => {
+            btn.onclick = onStatusClick;
         });
 
-        // Функции для работы с доходами
-        function changePeriod(period) {
-            const buttons = document.querySelectorAll('.period-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+        const totalLessons = monthLessons.length;
+        const totalSum = monthLessons.reduce((acc, l) => acc + (Number(l.price) || 0), 0);
+        summary.textContent = `${totalLessons} занят${ending(totalLessons)} • ${formatMoney(totalSum)}`;
+    }
 
-            console.log('Смена периода на:', period);
-            // Здесь будет логика загрузки данных за период
+    // ---------- Общий рендер по выбранному месяцу ----------
+    async function renderAll() {
+        await fetchLessonsFromServer();
+
+        const monthKey = getSelectedMonthKey();
+        const monthLessons = monthKey
+            ? allLessons.filter(l => (l.date || '').slice(0, 7) === monthKey)
+            : allLessons;
+
+        renderDoneLessons(monthLessons);
+        updateStatusCard(monthLessons);
+        updateMainStats(monthLessons, allLessons);
+        updateExamDistribution(allLessons);
+        if (monthKey) {
+            updatePercentStats(allLessons, monthLessons, monthKey);
         }
+    }
 
-        function exportData() {
-            alert('Экспорт данных в Excel');
-            // Здесь будет логика экспорта
-        }
+    // ---------- Обработчики действий ----------
+    async function onStatusClick(e) {
+        const btn    = e.currentTarget;
+        const id     = btn.dataset.id;
+        const action = btn.dataset.action; // 'paid' | 'overdue'
 
-        function generateReport() {
-            alert('Формирование отчета');
-            // Здесь будет логика формирования отчета
-        }
-
-        // Анимация графиков при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            const bars = document.querySelectorAll('.bar');
-            bars.forEach(bar => {
-                const height = bar.style.height;
-                bar.style.height = '0px';
-                setTimeout(() => {
-                    bar.style.height = height;
-                }, 300);
+        try {
+            await fetch(`/api/income-lessons/${id}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: action })
             });
-        });
-    </script>
+        } catch (err) {
+            console.error('Ошибка обновления статуса', err);
+        }
+        await renderAll();
+    }
+
+    async function resetLessons() {
+        if (!confirm('Очистить историю проведённых занятий?')) return;
+        try {
+            await fetch('/api/income-lessons/reset', { method: 'POST' });
+        } catch (e) {
+            console.error('Ошибка сброса истории', e);
+        }
+
+        // Чистим локальное хранилище, чтобы в расписании кнопки
+        // снова стали активными
+        try {
+            localStorage.removeItem('tutor_lessons_history_v1');
+        } catch (e) {
+            console.warn('Не удалось очистить localStorage', e);
+        }
+
+        await renderAll();
+    }
+    // ---------- Инициализация страницы доходов ----------
+    function initIncomePage() {
+        const sel = document.getElementById('month-select');
+        if (sel) {
+            const now = new Date();
+            const keyNow = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            const opt = Array.from(sel.options).find(o => o.value === keyNow);
+            if (opt) sel.value = keyNow;
+            sel.addEventListener('change', () => renderAll());
+        }
+
+        const resetBtn = document.getElementById('resetLessons');
+        if (resetBtn) resetBtn.addEventListener('click', resetLessons);
+
+        renderAll();
+    }
+
+    // Кнопки периода сверху (пока только визуальная смена)
+    function changePeriod(period) {
+        const buttons = document.querySelectorAll('.period-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        console.log('Смена периода (визуально):', period);
+    }
+
+    function exportData()  { alert('Экспорт данных в Excel (заглушка)'); }
+    function generateReport() { alert('Формирование отчета (заглушка)'); }
+</script>
 </body>
 </html>
-[file content end]
