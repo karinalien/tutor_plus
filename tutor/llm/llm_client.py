@@ -2,49 +2,30 @@ import time
 import requests
 from requests.exceptions import ConnectionError, Timeout, RequestException
 
-LMSTUDIO_URL = "http://127.0.0.1:12345/v1/chat/completions"
-LMSTUDIO_MODEL = "qwen2.5-1.5b-instruct"
+LMSTUDIO_URL = "http://127.0.0.1:12345/v1/responses"
+LMSTUDIO_MODEL = "qwen/qwen3-4b"   
+
 
 def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens: int = 3000):
+    prompt = (
+        "Ты — генератор тестов.\n"
+        "Создай 5–7 самостоятельных тестовых вопросов.\n"
+        "Используй только русский язык.\n"
+        "У каждого вопроса должно быть 4 варианта ответа (A, B, C, D) и один правильный.\n"
+        "Если в материале есть алгоритмы — кратко объясняй их прямо в вопросе.\n\n"
+        "Материал:\n"
+        f"{material_text}"
+    )
 
-    prompt = f"""
-Ты — генератор образовательных тестов.
-Создай 5–7 тестовых вопросов по материалу ниже.
-
-Требования к тестам:
-- Каждый вопрос должен быть САМОСТОЯТЕЛЬНЫМ.
-- У каждого вопроса должно быть 4 варианта ответа (A, B, C, D).
-- Только один вариант ответа должен быть правильным.
-- Вопрос не должен ссылаться на материалы или внешний контекст.
-- Если для решения требуется правило, формула или алгоритм — вставь краткое описание прямо в текст вопроса.
-- Не используй символы вроде "#", "*". Только кириллица и цифры.
-
-Шаги:
-1) Проанализируй материал и выдели ключевые понятия.
-2) Определи потенциально непонятные элементы и включи их описание в вопрос.
-3) Проверь, что каждый вопрос содержит всё, что нужно ученику.
-4) Оставь итоговые вопросы, строго соблюдая формат.
-
-Материал для анализа:
-{material_text}
-
-Формат вывода:
-1. [Вопрос]
-   A) ...
-   B) ...
-   C) ...
-   D) ...
-   Правильный ответ: X
-
-2. ...
-""".strip()
+    print(f"DEBUG: material_text = {repr(material_text[:200])}")
 
     payload = {
         "model": LMSTUDIO_MODEL,
+        "input": prompt,  
         "messages": [
-            {"role": "system", "content": "Ты — генератор тестов. Ты создаешь вопросы строго по требованиям пользователя."},
             {"role": "user", "content": prompt}
         ],
+        "response_format": {"type": "json_object"},
         "temperature": 0.1,
         "max_tokens": max_tokens
     }
@@ -52,42 +33,17 @@ def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens
     for attempt in range(max_retries + 1):
         try:
             response = requests.post(LMSTUDIO_URL, json=payload, timeout=240)
-
-            if response.status_code == 503:
-                if attempt < max_retries:
-                    time.sleep(1)
-                    continue
-                return "❌ LM Studio ответил 503 (модель не готова или перегружена)."
-
-            if response.status_code == 404:
-                return "❌ Модель не найдена. Проверь название модели в LM Studio."
-
-            if response.status_code == 500:
-                return "❌ Внутренняя ошибка LM Studio (500). Перезапусти модель."
-
             response.raise_for_status()
 
             data = response.json()
-            choices = data.get("choices")
-            if not choices or not isinstance(choices, list):
-                return "❌ Ошибка: пустой ответ от модели."
-
-            content = choices[0].get("message", {}).get("content", "")
-            if not content:
-                return "❌ Ошибка: модель вернула пустой текст."
-
+            content = data["output"][0]["content"][0]["text"]
             return content.strip()
 
-        except (ConnectionError, Timeout):
+        except Exception as e:
             if attempt < max_retries:
                 time.sleep(1)
                 continue
-            return "❌ Ошибка подключения или таймаут: LM Studio не отвечает."
+            return f"❌ Ошибка: {e}"
 
-        except RequestException as e:
-            return f"❌ Ошибка HTTP: {str(e)}"
+    return "❌ Ошибка: не удалось получить ответ после повторов."
 
-        except Exception as e:
-            return f"❌ Неожиданная ошибка: {str(e)}"
-
-    return "❌ Ошибка: не удалось получить ответ от модели."
