@@ -411,8 +411,165 @@
         }
         .nav-left  { left: 10px; }
         .nav-right { right: 10px; }
-    </style>
 
+        /* Стили для выбора дня недели */
+        .week-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #FEFCF8;
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid #88746b;
+        }
+
+        .day-btn {
+            padding: 10px 15px;
+            border: 2px solid transparent;
+            background: transparent;
+            color: #88746b;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .day-btn.active {
+            background: linear-gradient(135deg, #88746b, #6B5B73);
+            color: #FEFCF8;
+            border-color: #88746b;
+        }
+
+        .day-btn:hover:not(.active) {
+            background: rgba(136, 116, 107, 0.1);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #88746b;
+        }
+
+        .modal-header h3 {
+            color: #88746b;
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #88746b;
+            padding: 5px;
+        }
+
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group label {
+            color: #88746b;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #88746b;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #6B5B73;
+            box-shadow: 0 0 10px rgba(107, 91, 115, 0.3);
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.4);
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Адаптивность для мобильных */
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 20px;
+                margin: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -454,11 +611,6 @@
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="/reschedule" style="display: block; text-decoration: none; color: inherit;">
-                            🔄 Запросы на перенос
-                        </a>
-                    </li>
-                    <li class="menu-item">
                         <a href="/income" style="display: block; text-decoration: none; color: inherit;">
                             💰 Доходы
                         </a>
@@ -482,9 +634,19 @@
                         </div>
                         <div class="schedule-actions">
                             <button class="btn-primary" onclick="addLesson()">➕ Добавить занятие</button>
-                            <button class="btn-outline" onclick="showWeekView()">📅 Неделя</button>
-                            <button class="btn-outline" onclick="showRecurring()">🔄 Повторяющиеся</button>
+                            <button class="btn-outline" onclick="openCalendar()">📅 Выбрать дату</button>
                         </div>
+                    </section>
+
+                    <!-- Выбор дня недели (скрыт по умолчанию) -->
+                    <section class="week-selector" id="weekSelector" style="display: none; margin-bottom: 20px;">
+                        <div class="day-btn active" onclick="selectDay('monday')">Пн</div>
+                        <div class="day-btn" onclick="selectDay('tuesday')">Вт</div>
+                        <div class="day-btn" onclick="selectDay('wednesday')">Ср</div>
+                        <div class="day-btn" onclick="selectDay('thursday')">Чт</div>
+                        <div class="day-btn" onclick="selectDay('friday')">Пт</div>
+                        <div class="day-btn" onclick="selectDay('saturday')">Сб</div>
+                        <div class="day-btn" onclick="selectDay('sunday')">Вс</div>
                     </section>
 
                     <!-- Большая таблица расписания на день -->
@@ -509,23 +671,18 @@
                     <section class="quick-stats">
                         <div class="stat-card">
                             <h3>🎯 Занятий сегодня</h3>
-                            <p class="stat-number">5</p>
-                            <p class="stat-description">3 ОГЭ + 2 ЕГЭ</p>
+                            <p class="stat-number" id="lessonsCount">0</p>
+                            <p class="stat-description" id="lessonsBreakdown">0 ОГЭ + 0 ЕГЭ</p>
                         </div>
                         <div class="stat-card">
                             <h3>⏱️ Общее время</h3>
-                            <p class="stat-number">7.5ч</p>
+                            <p class="stat-number" id="totalTime">0ч</p>
                             <p class="stat-description">Академических часов</p>
                         </div>
                         <div class="stat-card">
                             <h3>💰 Прогноз дохода</h3>
-                            <p class="stat-number">7,500₽</p>
+                            <p class="stat-number" id="incomeForecast">0₽</p>
                             <p class="stat-description">За сегодняшний день</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3>📚 Материалы</h3>
-                            <p class="stat-number">3</p>
-                            <p class="stat-description">Нужно подготовить</p>
                         </div>
                     </section>
                 </div>
@@ -534,6 +691,457 @@
     </div>
 
 <script src="/timetable.js"></script>
+<script>
+    let currentView = 'day';
+    let selectedDay = 'monday';
+    let currentDate = new Date();
+    let studentsData = [];
+    let scheduleData = [];
+
+    // Загрузка данных при старте
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStudents();
+        loadScheduleForCurrentDate();
+        updateDateDisplay();
+
+        // Инициализация календаря
+        initDatePicker();
+    });
+
+    // Инициализация календаря
+    function initDatePicker() {
+        const dateInput = document.createElement('input');
+        dateInput.type = 'date';
+        dateInput.style.display = 'none';
+        dateInput.id = 'datePicker';
+        dateInput.value = currentDate.toISOString().split('T')[0];
+        document.body.appendChild(dateInput);
+
+        dateInput.addEventListener('change', function(e) {
+            currentDate = new Date(e.target.value);
+            updateDateDisplay();
+            loadScheduleForCurrentDate();
+        });
+    }
+
+    // Загрузка учеников
+    async function loadStudents() {
+        try {
+            const response = await fetch('/api/tutor/schedule/students');
+            const result = await response.json();
+
+            if (result.success) {
+                studentsData = result.students;
+                console.log('Загружены данные учеников:', studentsData);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки учеников:', error);
+        }
+    }
+
+    // Загрузка расписания на текущую дату
+    async function loadScheduleForCurrentDate() {
+        try {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const response = await fetch(`/api/tutor/schedule/date/${dateStr}`);
+            const result = await response.json();
+
+            if (result.success) {
+                scheduleData = result.schedule;
+                updateStatistics(result.stats);
+                renderSchedule();
+            } else {
+                console.error('Ошибка загрузки расписания:', result.message);
+                scheduleData = [];
+                renderSchedule();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки расписания:', error);
+            scheduleData = [];
+            renderSchedule();
+        }
+    }
+
+    // Обновление статистики
+    function updateStatistics(stats) {
+        if (!stats) return;
+
+        document.getElementById('lessonsCount').textContent = stats.lessons_count || 0;
+        document.getElementById('lessonsBreakdown').textContent = `${stats.oge_count || 0} ОГЭ + ${stats.ege_count || 0} ЕГЭ`;
+        document.getElementById('totalTime').textContent = `${stats.total_hours || 0}ч`;
+        document.getElementById('incomeForecast').textContent = `${(stats.income_forecast || 0).toLocaleString()}₽`;
+    }
+
+    // Обновление отображения даты
+    function updateDateDisplay() {
+        const dateElement = document.getElementById('currentPeriod');
+        if (currentView === 'day') {
+            dateElement.textContent = currentDate.toLocaleDateString('ru-RU', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } else {
+            dateElement.textContent = `Неделя • ${getDayName(selectedDay)}`;
+        }
+    }
+
+    // Переключение между видом дня и недели
+    function toggleWeekView() {
+        const weekSelector = document.getElementById('weekSelector');
+        const dayButton = document.querySelector('.btn-outline');
+
+        if (currentView === 'day') {
+            currentView = 'week';
+            weekSelector.style.display = 'flex';
+            dayButton.textContent = '📅 Неделя';
+            renderWeekSchedule();
+        } else {
+            currentView = 'day';
+            weekSelector.style.display = 'none';
+            dayButton.textContent = '📅 День';
+            loadScheduleForCurrentDate();
+        }
+    }
+
+    // Выбор дня недели
+    function selectDay(day) {
+        selectedDay = day;
+
+        // Обновляем активную кнопку
+        document.querySelectorAll('.day-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        renderWeekSchedule();
+    }
+
+    // Навигация по дням
+    function previousDay() {
+        currentDate.setDate(currentDate.getDate() - 1);
+        updateDateDisplay();
+        loadScheduleForCurrentDate();
+    }
+
+    function nextDay() {
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDateDisplay();
+        loadScheduleForCurrentDate();
+    }
+
+    // Открытие календаря
+    function openCalendar() {
+        document.getElementById('datePicker').showPicker();
+    }
+
+    // Отрисовка расписания
+    function renderSchedule() {
+        const scheduleBody = document.getElementById('schedule-body');
+
+        if (!scheduleData || scheduleData.length === 0) {
+            scheduleBody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="empty-slot">
+                        📅 На этот день занятий не запланировано
+                        <br><br>
+                        <button class="btn-primary" onclick="addLesson()" style="margin-top: 10px;">
+                            ➕ Добавить занятие
+                        </button>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        let scheduleHTML = '';
+
+        // Сортируем занятия по времени
+        scheduleData.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+        // Создаем слоты времени с 9:00 до 21:00
+        const timeSlots = generateTimeSlots();
+
+        timeSlots.forEach(slot => {
+            const lesson = scheduleData.find(l =>
+                l.start_time <= slot.time && l.end_time > slot.time
+            );
+
+            if (lesson && !lesson._processed) {
+                lesson._processed = true;
+                const student = studentsData.find(s =>
+                    s.first_name === lesson.first_name && s.last_name === lesson.last_name
+                );
+
+                scheduleHTML += createLessonRow(lesson, student, slot.time);
+            } else if (!lesson) {
+                scheduleHTML += createEmptySlot(slot.time);
+            }
+        });
+
+        scheduleBody.innerHTML = scheduleHTML;
+    }
+
+    // Создание строки с занятием
+    function createLessonRow(lesson, student, time) {
+        const startTime = formatTime(lesson.start_time);
+        const endTime = formatTime(lesson.end_time);
+        const examClass = student ? (student.exam_type === 'oge' ? 'oge' : 'ege') : 'ege';
+        const examLabel = student ? (student.exam_type === 'oge' ? 'ОГЭ' : 'ЕГЭ') : 'ЕГЭ';
+        const avatarText = getAvatarText(lesson.first_name, lesson.last_name);
+
+        return `
+            <tr>
+                <td class="time-slot">${startTime} - ${endTime}</td>
+                <td>
+                    <div class="lesson-card ${examClass}">
+                        <div class="lesson-header">
+                            <div class="student-info">
+                                <div class="student-avatar">${avatarText}</div>
+                                <div class="student-details">
+                                    <h4>${lesson.first_name} ${lesson.last_name}</h4>
+                                    <p>${examLabel} • ${student ? student.lesson_price + '₽' : ''}</p>
+                                </div>
+                            </div>
+                            <span class="lesson-type ${examClass}">${examLabel}</span>
+                        </div>
+                        <div class="lesson-details">
+                            <div class="lesson-topic">${lesson.topic_title || 'Индивидуальное занятие'}</div>
+                            <div class="lesson-description">${lesson.day_of_week ? getDayName(lesson.day_of_week) : ''}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="lesson-actions">
+                        <button class="btn-small btn-start" onclick="startLesson(${lesson.id})">▶ Начать</button>
+                        <button class="btn-small btn-edit" onclick="editLesson(${lesson.id})">✏️</button>
+                        <button class="btn-small btn-cancel" onclick="cancelLesson(${lesson.id})">❌</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Создание пустого слота
+    function createEmptySlot(time) {
+        return `
+            <tr>
+                <td class="time-slot">${formatTime(time)} - ${formatTime(addHours(time, 1))}</td>
+                <td>
+                    <div class="empty-slot" style="text-align: center; padding: 20px; color: #999;">
+                        Свободно
+                    </div>
+                </td>
+                <td>
+                    <button class="btn-small btn-start" onclick="addLessonAtTime('${time}')">
+                        ➕ Добавить
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Генерация временных слотов
+    function generateTimeSlots() {
+        const slots = [];
+        for (let hour = 9; hour <= 20; hour++) {
+            slots.push({
+                time: `${hour.toString().padStart(2, '0')}:00`,
+                label: `${hour}:00 - ${hour + 1}:00`
+            });
+        }
+        return slots;
+    }
+
+    // Добавление занятия
+    function addLesson() {
+        showAddLessonModal();
+    }
+
+    // Добавление занятия в конкретное время
+    function addLessonAtTime(time) {
+        showAddLessonModal(time);
+    }
+
+    // Показать модальное окно добавления занятия
+    function showAddLessonModal(prefilledTime = null) {
+        // Создаем модальное окно
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3>➕ Добавить занятие</h3>
+                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <form id="addLessonForm" class="upload-form">
+                    <div class="form-group">
+                        <label for="lessonStudent">Ученик *</label>
+                        <select id="lessonStudent" name="student_id" required>
+                            <option value="">Выберите ученика</option>
+                            ${studentsData.map(student => `
+                                <option value="${student.id}">
+                                    ${student.first_name} ${student.last_name} (${student.exam_type === 'oge' ? 'ОГЭ' : 'ЕГЭ'}) - ${student.lesson_price}₽
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lessonDay">День недели *</label>
+                        <select id="lessonDay" name="day_of_week" required>
+                            <option value="monday">Понедельник</option>
+                            <option value="tuesday">Вторник</option>
+                            <option value="wednesday">Среда</option>
+                            <option value="thursday">Четверг</option>
+                            <option value="friday">Пятница</option>
+                            <option value="saturday">Суббота</option>
+                            <option value="sunday">Воскресенье</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="lessonStartTime">Время начала *</label>
+                            <input type="time" id="lessonStartTime" name="start_time" value="${prefilledTime || '09:00'}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lessonEndTime">Время окончания *</label>
+                            <input type="time" id="lessonEndTime" name="end_time" value="${prefilledTime ? addHours(prefilledTime, 1) : '10:00'}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lessonTopic">Тема занятия (опционально)</label>
+                        <input type="text" id="lessonTopic" name="topic" placeholder="Введите тему занятия">
+                    </div>
+
+                    <button type="submit" class="upload-btn" id="addLessonBtn">
+                        ➕ Добавить занятие
+                    </button>
+                </form>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Обработчик отправки формы
+        document.getElementById('addLessonForm').addEventListener('submit', handleAddLessonSubmit);
+
+        // Установка текущего дня недели если в дневном режиме
+        if (currentView === 'day') {
+            const dayMap = {
+                0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
+                4: 'thursday', 5: 'friday', 6: 'saturday'
+            };
+            const today = dayMap[currentDate.getDay()];
+            document.getElementById('lessonDay').value = today;
+        }
+    }
+
+    // Обработчик добавления занятия
+    async function handleAddLessonSubmit(e) {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const data = {
+            student_id: formData.get('student_id'),
+            day_of_week: formData.get('day_of_week'),
+            start_time: formData.get('start_time'),
+            end_time: formData.get('end_time')
+        };
+
+        const topic = formData.get('topic');
+        if (topic) {
+            data.topic = topic;
+        }
+
+        const submitBtn = document.getElementById('addLessonBtn');
+
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Добавление...';
+
+            const response = await fetch('/api/tutor/schedule/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ Занятие успешно добавлено!');
+                document.querySelector('.modal-overlay').remove();
+                loadScheduleForCurrentDate();
+            } else {
+                alert('❌ Ошибка: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Ошибка добавления занятия:', error);
+            alert('❌ Ошибка при добавлении занятия');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '➕ Добавить занятие';
+        }
+    }
+
+    // Вспомогательные функции
+    function formatTime(timeString) {
+        if (!timeString) return '';
+        return timeString.substring(0, 5);
+    }
+
+    function addHours(time, hours) {
+        const [h, m] = time.split(':').map(Number);
+        const newHour = h + hours;
+        return `${newHour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
+    function getAvatarText(firstName, lastName) {
+        return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+    }
+
+    function getDayName(day) {
+        const days = {
+            'monday': 'Понедельник',
+            'tuesday': 'Вторник',
+            'wednesday': 'Среда',
+            'thursday': 'Четверг',
+            'friday': 'Пятница',
+            'saturday': 'Суббота',
+            'sunday': 'Воскресенье'
+        };
+        return days[day] || day;
+    }
+
+    // Заглушки для функций
+    function startLesson(lessonId) {
+        alert(`Начало занятия #${lessonId}`);
+        // Здесь будет логика начала онлайн-занятия
+    }
+
+    function editLesson(lessonId) {
+        alert(`Редактирование занятия #${lessonId}`);
+        // Здесь будет логика редактирования занятия
+    }
+
+    function cancelLesson(lessonId) {
+        if (confirm('Вы уверены, что хотите отменить занятие?')) {
+            alert(`Занятие #${lessonId} отменено`);
+            // Здесь будет логика отмены занятия
+        }
+    }
+
+    // Отрисовка расписания на неделю
+    function renderWeekSchedule() {
+        // Для недельного вида загружаем расписание для выбранного дня
+        loadScheduleForCurrentDate();
+    }
+</script>
 
 </body>
 </html>

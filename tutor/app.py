@@ -875,6 +875,178 @@ def update_download_stats(material_id):
         print(f"❌ Ошибка обновления статистики: {e}")
         return jsonify({'success': False}), 500
 
+
+# Добавьте в app.py следующие маршруты:
+
+@app.route('/api/tutor/income-stats')
+def api_income_stats():
+    """API для получения статистики доходов"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        tutor_id = session['user_id']
+        stats = db.get_income_statistics(tutor_id)
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка получения статистики доходов: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка загрузки статистики'}), 500
+
+
+@app.route('/api/tutor/income-details')
+def api_income_details():
+    """API для получения детализации доходов"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        connection = db.get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT 
+                i.id,
+                i.amount,
+                i.payment_date,
+                i.status,
+                u.first_name,
+                u.last_name,
+                u.exam_type,
+                s.day_of_week,
+                s.start_time
+            FROM income i
+            JOIN users u ON i.student_id = u.id
+            JOIN schedule s ON i.schedule_id = s.id
+            WHERE s.tutor_id = ?
+            ORDER BY i.payment_date DESC
+            LIMIT 50
+        """, (session['user_id'],))
+
+        income_details = [dict(row) for row in cursor.fetchall()]
+        connection.close()
+
+        return jsonify({
+            'success': True,
+            'income_details': income_details
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка получения детализации доходов: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка загрузки детализации'}), 500
+
+
+# Добавьте в app.py новый маршрут:
+
+@app.route('/api/tutor/quick-stats')
+def api_quick_stats():
+    """API для получения быстрой статистики репетитора"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        tutor_id = session['user_id']
+        print(f"📊 Запрос статистики для репетитора ID: {tutor_id}")
+
+        stats = db.get_tutor_quick_stats(tutor_id)
+
+        print(f"📈 Отправляемая статистика: {stats}")
+
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка получения быстрой статистики: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': 'Ошибка загрузки статистики'}), 500
+
+@app.route('/api/tutor/schedule/students')
+def api_get_schedule_students():
+    """API для получения учеников для расписания"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        tutor_id = session['user_id']
+        students = db.get_tutor_students_for_schedule(tutor_id)
+
+        return jsonify({
+            'success': True,
+            'students': students
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка получения учеников для расписания: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка загрузки учеников'}), 500
+
+
+@app.route('/api/tutor/schedule/create', methods=['POST'])
+def api_create_schedule_entry():
+    """API для создания новой записи в расписании"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        data = request.get_json()
+        tutor_id = session['user_id']
+
+        required_fields = ['student_id', 'day_of_week', 'start_time', 'end_time']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'Поле {field} обязательно'}), 400
+
+        schedule_id = db.create_schedule_entry(
+            tutor_id=tutor_id,
+            student_id=data['student_id'],
+            day_of_week=data['day_of_week'],
+            start_time=data['start_time'],
+            end_time=data['end_time'],
+            topic_id=data.get('topic_id')
+        )
+
+        if schedule_id:
+            return jsonify({
+                'success': True,
+                'message': 'Занятие успешно добавлено в расписание',
+                'schedule_id': schedule_id
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Ошибка при создании занятия'}), 500
+
+    except Exception as e:
+        print(f"❌ Ошибка создания занятия: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка при создании занятия'}), 500
+
+
+@app.route('/api/tutor/schedule/date/<date>')
+def api_get_schedule_for_date(date):
+    """API для получения расписания на конкретную дату"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        tutor_id = session['user_id']
+        schedule = db.get_schedule_for_date(tutor_id, date)
+        stats = db.get_schedule_statistics(tutor_id, date)
+
+        return jsonify({
+            'success': True,
+            'schedule': schedule,
+            'stats': stats
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка получения расписания на дату: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка загрузки расписания'}), 500
+
+
 if __name__ == '__main__':
     print("Flask сервер запущен!")
     print("Откройте: http://localhost:5000")

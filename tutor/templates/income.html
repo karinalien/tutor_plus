@@ -548,11 +548,6 @@
                             👥 Ученики
                         </a>
                     </li>
-                    <li class="menu-item">
-                        <a href="/reschedule" style="display: block; text-decoration: none; color: inherit;">
-                            🔄 Запросы на перенос
-                        </a>
-                    </li>
                     <li class="menu-item active">
                         <a href="/income" style="display: block; text-decoration: none; color: inherit;">
                             💰 Доходы
@@ -576,20 +571,19 @@
                             <button class="period-btn" onclick="changePeriod('quarter')">Квартал</button>
                             <button class="period-btn" onclick="changePeriod('year')">Год</button>
                             <select class="period-btn" style="border: 2px solid #88746b; background: white;">
+                                <option>Декабрь 2025</option>
+                                <option>Ноябрь 2025</option>
+                                <option>Октябрь 2025</option>
+                                <option>Сентябрь 2025</option>
+                                <option>Август 2025</option>
+                                <option>Июль2025</option>
+                                <option>Июнь 2025</option>
                                 <option>Май 2025</option>
                                 <option>Апрель 2025</option>
                                 <option>Март 2025</option>
                                 <option>Февраль 2025</option>
                                 <option>Январь 2025</option>
                             </select>
-                        </div>
-                        <div class="export-actions">
-                            <button class="btn-export" onclick="exportData()">
-                                📊 Экспорт в Excel
-                            </button>
-                            <button class="btn-report" onclick="generateReport()">
-                                📈 Сформировать отчет
-                            </button>
                         </div>
                     </section>
 
@@ -599,214 +593,223 @@
                             <div class="stat-icon">💰</div>
                             <h3 class="stat-title">Доход за текущий месяц</h3>
                             <p class="stat-amount">45,000 ₽</p>
-                            <span class="stat-change change-positive">+12% к прошлому месяцу</span>
                         </div>
 
                         <div class="stat-card">
                             <div class="stat-icon">📈</div>
                             <h3 class="stat-title">Прогноз на месяц</h3>
                             <p class="stat-amount">60,000 ₽</p>
-                            <span class="stat-change change-positive">+25% к текущему</span>
                         </div>
 
                         <div class="stat-card">
                             <div class="stat-icon">⏱️</div>
                             <h3 class="stat-title">Средний доход за занятие</h3>
                             <p class="stat-amount">1,500 ₽</p>
-                            <span class="stat-change change-neutral">Без изменений</span>
                         </div>
 
                         <div class="stat-card">
                             <div class="stat-icon">🎯</div>
                             <h3 class="stat-title">Всего заработано в 2025</h3>
                             <p class="stat-amount">320,000 ₽</p>
-                            <span class="stat-change change-positive">+18% к прошлому году</span>
                         </div>
-                    </section>
-
-                    <!-- Статистика оплат -->
-                    <section class="payment-stats">
-                        <div class="payment-card">
-                            <div class="payment-header">
-                                <h3 class="payment-title">Статусы оплат за май</h3>
-                                <div class="payment-total">45,000 ₽</div>
-                            </div>
-                            <div class="payment-details">
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span class="payment-badge badge-paid"></span>
-                                        Оплачено
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">36,000 ₽</span>
-                                        <span class="payment-count">(24 занятия)</span>
-                                    </div>
-                                </div>
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span class="payment-badge badge-pending"></span>
-                                        Ожидает оплаты
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">7,500 ₽</span>
-                                        <span class="payment-count">(5 занятий)</span>
-                                    </div>
-                                </div>
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span class="payment-badge badge-overdue"></span>
-                                        Просрочено
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">1,500 ₽</span>
-                                        <span class="payment-count">(1 занятие)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="payment-card">
-                            <div class="payment-header">
-                                <h3 class="payment-title">Распределение по экзаменам</h3>
-                                <div class="payment-total">45,000 ₽</div>
-                            </div>
-                            <div class="payment-details">
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span style="color: #339af0;">🎓</span>
-                                        Подготовка к ЕГЭ
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">25,000 ₽</span>
-                                        <span class="payment-count">(55%)</span>
-                                    </div>
-                                </div>
-                                <div class="payment-item">
-                                    <div class="payment-label">
-                                        <span style="color: #51cf66;">🎯</span>
-                                        Подготовка к ОГЭ
-                                    </div>
-                                    <div>
-                                        <span class="payment-amount">20,000 ₽</span>
-                                        <span class="payment-count">(45%)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- График и детализация -->
-                    <section class="charts-details">
-                        <!-- График оплат -->
-                        <div class="chart-container">
-                            <h3 class="chart-title">Статистика оплат за май 2025</h3>
-                            <div class="chart-bars">
-                                <div class="chart-bar">
-                                    <div class="bar bar-paid" style="height: 160px;">
-                                        <span class="bar-value">36,000₽</span>
-                                    </div>
-                                    <span class="bar-label">Оплачено</span>
-                                </div>
-                                <div class="chart-bar">
-                                    <div class="bar bar-pending" style="height: 80px;">
-                                        <span class="bar-value">7,500₽</span>
-                                    </div>
-                                    <span class="bar-label">Ожидает</span>
-                                </div>
-                                <div class="chart-bar">
-                                    <div class="bar bar-overdue" style="height: 30px;">
-                                        <span class="bar-value">1,500₽</span>
-                                    </div>
-                                    <span class="bar-label">Просрочено</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Детализация доходов -->
-                        <div class="income-details">
-                            <div class="details-header">
-                                <h3 class="details-title">Детализация доходов за май</h3>
-                                <div class="details-summary">30 занятий • 45,000 ₽</div>
-                            </div>
-                            <table class="income-table">
-                                <thead>
-                                    <tr>
-                                        <th>Дата</th>
-                                        <th>Ученик</th>
-                                        <th>Экзамен</th>
-                                        <th>Стоимость</th>
-                                        <th>Статус</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>20.05.2025</td>
-                                        <td><span class="student-avatar-small">АП</span>Алексей Петров</td>
-                                        <td>ОГЭ</td>
-                                        <td>1,500 ₽</td>
-                                        <td><span class="status-badge status-paid">Оплачено</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>19.05.2025</td>
-                                        <td><span class="student-avatar-small">ЕС</span>Елена Сидорова</td>
-                                        <td>ЕГЭ</td>
-                                        <td>2,000 ₽</td>
-                                        <td><span class="status-badge status-paid">Оплачено</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>18.05.2025</td>
-                                        <td><span class="student-avatar-small">ИК</span>Иван Козлов</td>
-                                        <td>ОГЭ</td>
-                                        <td>1,500 ₽</td>
-                                        <td><span class="status-badge status-pending">Ожидает</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>17.05.2025</td>
-                                        <td><span class="student-avatar-small">ОН</span>Ольга Новикова</td>
-                                        <td>ЕГЭ</td>
-                                        <td>2,000 ₽</td>
-                                        <td><span class="status-badge status-overdue">Просрочено</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>16.05.2025</td>
-                                        <td><span class="student-avatar-small">ДВ</span>Дмитрий Волков</td>
-                                        <td>ОГЭ</td>
-                                        <td>1,500 ₽</td>
-                                        <td><span class="status-badge status-paid">Оплачено</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Функция для выделения активного пункта меню
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const menuItems = document.querySelectorAll('.menu-item');
+        let incomeStats = {};
+        let incomeDetails = [];
 
+        // Загрузка данных при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadIncomeStats();
+            loadIncomeDetails();
+
+            // Обновляем активное меню
+            const menuItems = document.querySelectorAll('.menu-item');
             menuItems.forEach(item => {
                 const link = item.querySelector('a');
-                if (link && link.getAttribute('href') === currentPath) {
+                if (link && link.getAttribute('href') === '/income') {
                     item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
                 }
             });
         });
 
-        // Функции для работы с доходами
+        // Загрузка статистики доходов
+        async function loadIncomeStats() {
+            try {
+                const response = await fetch('/api/tutor/income-stats');
+                const result = await response.json();
+
+                if (result.success) {
+                    incomeStats = result.stats;
+                    updateStatsDisplay();
+                } else {
+                    showError('Ошибка загрузки статистики');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статистики:', error);
+                showError('Ошибка загрузки статистики');
+            }
+        }
+
+        // Загрузка детализации доходов
+        async function loadIncomeDetails() {
+            try {
+                const response = await fetch('/api/tutor/income-details');
+                const result = await response.json();
+
+                if (result.success) {
+                    incomeDetails = result.income_details;
+                    updateIncomeTable();
+                } else {
+                    showError('Ошибка загрузки детализации');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки детализации:', error);
+                showError('Ошибка загрузки детализации');
+            }
+        }
+
+        // Обновление отображения статистики
+        function updateStatsDisplay() {
+            // Основная статистика
+            document.querySelectorAll('.stat-amount')[0].textContent = formatCurrency(incomeStats.current_month_income || 0);
+            document.querySelectorAll('.stat-amount')[1].textContent = formatCurrency(incomeStats.monthly_forecast || 0);
+            document.querySelectorAll('.stat-amount')[2].textContent = formatCurrency(incomeStats.average_lesson_price || 0);
+            document.querySelectorAll('.stat-amount')[3].textContent = formatCurrency(incomeStats.yearly_income || 0);
+
+            // Статистика оплат
+            updatePaymentStats();
+
+            // Обновляем график
+            updateChart();
+        }
+
+        // Обновление статистики оплат
+        function updatePaymentStats() {
+            const paidAmount = incomeStats.current_month_income || 0;
+            const pendingAmount = Math.max(0, (incomeStats.monthly_forecast || 0) - paidAmount);
+
+            // Обновляем платежную статистику
+            document.querySelectorAll('.payment-total')[0].textContent = formatCurrency(incomeStats.monthly_forecast || 0);
+            document.querySelectorAll('.payment-amount')[0].textContent = formatCurrency(paidAmount);
+            document.querySelectorAll('.payment-amount')[1].textContent = formatCurrency(pendingAmount);
+            document.querySelectorAll('.payment-amount')[2].textContent = '0 ₽'; // Просрочено
+
+            // Обновляем распределение по экзаменам (заглушка)
+            const ogeAmount = Math.round(paidAmount * 0.55);
+            const egeAmount = paidAmount - ogeAmount;
+
+            document.querySelectorAll('.payment-amount')[3].textContent = formatCurrency(ogeAmount);
+            document.querySelectorAll('.payment-amount')[4].textContent = formatCurrency(egeAmount);
+        }
+
+        // Обновление таблицы доходов
+        function updateIncomeTable() {
+            const tableBody = document.querySelector('.income-table tbody');
+
+            if (!incomeDetails || incomeDetails.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
+                            📊 Данные о доходах отсутствуют
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let tableHTML = '';
+
+            incomeDetails.forEach(income => {
+                const studentInitials = getStudentInitials(income.first_name, income.last_name);
+                const statusClass = getStatusClass(income.status);
+                const statusText = getStatusText(income.status);
+                const examType = income.exam_type === 'oge' ? 'ОГЭ' : 'ЕГЭ';
+
+                tableHTML += `
+                    <tr>
+                        <td>${formatDate(income.payment_date)}</td>
+                        <td><span class="student-avatar-small">${studentInitials}</span>${income.first_name} ${income.last_name}</td>
+                        <td>${examType}</td>
+                        <td>${formatCurrency(income.amount)}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+
+            tableBody.innerHTML = tableHTML;
+        }
+
+        // Обновление графика
+        function updateChart() {
+            const paidAmount = incomeStats.current_month_income || 0;
+            const pendingAmount = Math.max(0, (incomeStats.monthly_forecast || 0) - paidAmount);
+
+            const maxAmount = Math.max(paidAmount, pendingAmount, 1000);
+            const scale = 200 / maxAmount; // 200px - максимальная высота столбца
+
+            document.querySelectorAll('.bar-paid')[0].style.height = `${paidAmount * scale}px`;
+            document.querySelectorAll('.bar-pending')[0].style.height = `${pendingAmount * scale}px`;
+            document.querySelectorAll('.bar-overdue')[0].style.height = `10px`; // Минимальная высота для просроченных
+
+            document.querySelectorAll('.bar-value')[0].textContent = formatCurrency(paidAmount);
+            document.querySelectorAll('.bar-value')[1].textContent = formatCurrency(pendingAmount);
+            document.querySelectorAll('.bar-value')[2].textContent = '0₽';
+        }
+
+        // Вспомогательные функции
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        }
+
+        function getStudentInitials(firstName, lastName) {
+            return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        }
+
+        function getStatusClass(status) {
+            const statusMap = {
+                'paid': 'status-paid',
+                'pending': 'status-pending',
+                'overdue': 'status-overdue'
+            };
+            return statusMap[status] || 'status-pending';
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'paid': 'Оплачено',
+                'pending': 'Ожидает',
+                'overdue': 'Просрочено'
+            };
+            return statusMap[status] || 'Ожидает';
+        }
+
+        function showError(message) {
+            console.error(message);
+            // Можно добавить уведомление для пользователя
+        }
+
+        // Функции для работы с периодами
         function changePeriod(period) {
             const buttons = document.querySelectorAll('.period-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
 
-            console.log('Смена периода на:', period);
-            // Здесь будет логика загрузки данных за период
+            // Здесь можно добавить логику загрузки данных за выбранный период
+            loadIncomeStats();
+            loadIncomeDetails();
         }
 
         function exportData() {
@@ -819,18 +822,11 @@
             // Здесь будет логика формирования отчета
         }
 
-        // Анимация графиков при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            const bars = document.querySelectorAll('.bar');
-            bars.forEach(bar => {
-                const height = bar.style.height;
-                bar.style.height = '0px';
-                setTimeout(() => {
-                    bar.style.height = height;
-                }, 300);
-            });
-        });
+        // Автоматическое обновление данных каждые 30 секунд
+        setInterval(() => {
+            loadIncomeStats();
+            loadIncomeDetails();
+        }, 30000);
     </script>
 </body>
 </html>
-[file content end]

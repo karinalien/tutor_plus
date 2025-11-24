@@ -90,17 +90,19 @@ CREATE TABLE IF NOT EXISTS rescheduling_requests (
 -- Таблица доходов
 CREATE TABLE IF NOT EXISTS income (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    schedule_id INTEGER NOT NULL,
     student_id INTEGER NOT NULL,
-    lesson_id INTEGER NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_date DATE NOT NULL,
     month_year VARCHAR(7) NOT NULL,
+    status VARCHAR(20) DEFAULT 'paid' CHECK (status IN ('paid', 'pending', 'overdue')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+    FOREIGN KEY (schedule_id) REFERENCES schedule(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Таблица учебных материалов (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+
+-- Таблица учебных материалов
 CREATE TABLE IF NOT EXISTS materials (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tutor_id INTEGER NOT NULL,
