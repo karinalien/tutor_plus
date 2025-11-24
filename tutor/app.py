@@ -989,7 +989,7 @@ def api_get_schedule_students():
 
 @app.route('/api/tutor/schedule/create', methods=['POST'])
 def api_create_schedule_entry():
-    """API для создания новой записи в расписании"""
+    """API для создания новой записи в расписании (регулярной или разовой)"""
     if 'user_id' not in session or session['role'] != 'tutor':
         return jsonify({'error': 'Доступ запрещен'}), 403
 
@@ -997,33 +997,64 @@ def api_create_schedule_entry():
         data = request.get_json()
         tutor_id = session['user_id']
 
-        required_fields = ['student_id', 'day_of_week', 'start_time', 'end_time']
+        required_fields = ['student_id', 'start_time', 'end_time', 'lesson_type']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'success': False, 'message': f'Поле {field} обязательно'}), 400
 
-        schedule_id = db.create_schedule_entry(
-            tutor_id=tutor_id,
-            student_id=data['student_id'],
-            day_of_week=data['day_of_week'],
-            start_time=data['start_time'],
-            end_time=data['end_time'],
-            topic_id=data.get('topic_id')
-        )
+        connection = db.get_connection()
+        cursor = connection.cursor()
 
-        if schedule_id:
-            return jsonify({
-                'success': True,
-                'message': 'Занятие успешно добавлено в расписание',
-                'schedule_id': schedule_id
-            })
+        # Создаем тему если не указана
+        topic_title = data.get('topic', f'Занятие с учеником {data["student_id"]}')
+        cursor.execute('''
+            INSERT INTO topics (title, description, created_by)
+            VALUES (?, ?, ?)
+        ''', (topic_title, 'Индивидуальное занятие', tutor_id))
+        topic_id = cursor.lastrowid
+
+        # Определяем день недели
+        if data['lesson_type'] == 'single':
+            # Для разовых занятий определяем день недели из даты
+            from datetime import datetime
+            lesson_date = data['lesson_date']
+            date_obj = datetime.strptime(lesson_date, '%Y-%m-%d')
+            day_map = {
+                0: 'monday', 1: 'tuesday', 2: 'wednesday', 3: 'thursday',
+                4: 'friday', 5: 'saturday', 6: 'sunday'
+            }
+            day_of_week = day_map[date_obj.weekday()]
         else:
-            return jsonify({'success': False, 'message': 'Ошибка при создании занятия'}), 500
+            # Для регулярных занятий берем день недели из формы
+            day_of_week = data['day_of_week']
+
+        # Создаем запись в расписании
+        cursor.execute('''
+            INSERT INTO schedule (student_id, tutor_id, topic_id, day_of_week, start_time, end_time, status, lesson_type)
+            VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
+        ''', (data['student_id'], tutor_id, topic_id, day_of_week, data['start_time'], data['end_time'], data['lesson_type']))
+
+        schedule_id = cursor.lastrowid
+
+        # Для разовых занятий создаем запись в single_lessons
+        if data['lesson_type'] == 'single':
+            cursor.execute('''
+                INSERT INTO single_lessons (schedule_id, lesson_date)
+                VALUES (?, ?)
+            ''', (schedule_id, data['lesson_date']))
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Занятие успешно добавлено в расписание',
+            'schedule_id': schedule_id
+        })
 
     except Exception as e:
         print(f"❌ Ошибка создания занятия: {e}")
         return jsonify({'success': False, 'message': 'Ошибка при создании занятия'}), 500
-
 
 @app.route('/api/tutor/schedule/date/<date>')
 def api_get_schedule_for_date(date):

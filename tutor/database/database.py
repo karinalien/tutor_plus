@@ -117,7 +117,7 @@ class Database:
 
     def create_student(self, username, password, first_name, last_name, tutor_id, contact_info, exam_type, lesson_price,
                        day_of_week, lesson_time):
-        """Создание нового ученика с расписанием"""
+        """Создание нового ученика с автоматическим расписанием"""
         connection = self.get_connection()
         if not connection:
             return False
@@ -131,7 +131,7 @@ class Database:
                 print(f"❌ Пользователь с логином '{username}' уже существует")
                 return False
 
-            # Создаем пользователя с exam_type
+            # Создаем пользователя
             cursor.execute('''
                 INSERT INTO users (
                     username, password_hash, role, first_name, last_name, 
@@ -141,33 +141,31 @@ class Database:
 
             student_id = cursor.lastrowid
 
-            # Создаем расписание для ученика
-            # Сначала нужно создать тему (topic) для занятий
+            # Создаем тему для занятий
             cursor.execute('''
                 INSERT INTO topics (title, description, created_by)
                 VALUES (?, ?, ?)
-            ''', (f'Занятия с {first_name} {last_name}', f'Индивидуальные занятия по подготовке к {exam_type.upper()}',
-                  tutor_id))
+            ''', (
+            f'Занятия с {first_name} {last_name}', f'Регулярные занятия по подготовке к {exam_type.upper()}', tutor_id))
 
             topic_id = cursor.lastrowid
 
-            # Создаем расписание
-            start_time = lesson_time
             # Вычисляем время окончания (занятие длится 1 час)
             from datetime import datetime, timedelta
-            start_dt = datetime.strptime(start_time, '%H:%M')
+            start_dt = datetime.strptime(lesson_time, '%H:%M')
             end_dt = start_dt + timedelta(hours=1)
             end_time = end_dt.strftime('%H:%M')
 
+            # Создаем РЕГУЛЯРНОЕ расписание
             cursor.execute('''
-                INSERT INTO schedule (student_id, tutor_id, topic_id, day_of_week, start_time, end_time, status)
-                VALUES (?, ?, ?, ?, ?, ?, 'active')
-            ''', (student_id, tutor_id, topic_id, day_of_week, start_time, end_time))
+                INSERT INTO schedule (student_id, tutor_id, topic_id, day_of_week, start_time, end_time, status, lesson_type)
+                VALUES (?, ?, ?, ?, ?, ?, 'active', 'regular')
+            ''', (student_id, tutor_id, topic_id, day_of_week, lesson_time, end_time))
 
             connection.commit()
 
-            print(
-                f"✅ Ученик создан: {first_name} {last_name} (ID: {student_id}) с расписанием: {day_of_week} {start_time}-{end_time}")
+            print(f"✅ Ученик создан: {first_name} {last_name} (ID: {student_id})")
+            print(f"📅 Автоматическое расписание: {day_of_week} {lesson_time}-{end_time} (регулярное)")
             return student_id
 
         except sqlite3.Error as e:
@@ -175,6 +173,7 @@ class Database:
             return False
         finally:
             connection.close()
+
 
     def get_tutor_students(self, tutor_id: int):
         """Получение всех учеников репетитора с информацией о расписании"""
@@ -706,7 +705,7 @@ class Database:
                 connection.close()
 
     def get_schedule_for_date(self, tutor_id, date):
-        """Получение расписания для конкретной даты"""
+        """Получение расписания для конкретной даты - ВКЛЮЧАЕТ РЕГУЛЯРНЫЕ ЗАНЯТИЯ"""
         connection = self.get_connection()
         if not connection:
             return []
@@ -727,6 +726,8 @@ class Database:
             day_of_week = day_map[date_obj.weekday()]
 
             cursor = connection.cursor()
+
+            # Получаем ВСЕ активные регулярные занятия на этот день недели
             cursor.execute("""
                 SELECT 
                     s.id,
@@ -734,19 +735,59 @@ class Database:
                     s.start_time,
                     s.end_time,
                     s.status,
+                    s.lesson_type,
                     u.first_name,
                     u.last_name,
                     u.exam_type,
+                    u.lesson_price,
                     t.title as topic_title
                 FROM schedule s
                 JOIN users u ON s.student_id = u.id
                 LEFT JOIN topics t ON s.topic_id = t.id
-                WHERE s.tutor_id = ? AND s.day_of_week = ? AND s.status = 'active'
+                WHERE s.tutor_id = ? 
+                AND s.day_of_week = ? 
+                AND s.status = 'active'
+                AND (s.lesson_type = 'regular' OR s.lesson_type IS NULL)
                 ORDER BY s.start_time
             """, (tutor_id, day_of_week))
 
-            schedule = [dict(row) for row in cursor.fetchall()]
-            return schedule
+            regular_lessons = [dict(row) for row in cursor.fetchall()]
+
+            # Также получаем разовые занятия на конкретную дату
+            cursor.execute("""
+                SELECT 
+                    s.id,
+                    s.day_of_week,
+                    s.start_time,
+                    s.end_time,
+                    s.status,
+                    s.lesson_type,
+                    u.first_name,
+                    u.last_name,
+                    u.exam_type,
+                    u.lesson_price,
+                    t.title as topic_title,
+                    sl.lesson_date
+                FROM schedule s
+                JOIN single_lessons sl ON s.id = sl.schedule_id
+                JOIN users u ON s.student_id = u.id
+                LEFT JOIN topics t ON s.topic_id = t.id
+                WHERE s.tutor_id = ? 
+                AND sl.lesson_date = ?
+                AND s.status = 'active'
+                AND s.lesson_type = 'single'
+                ORDER BY s.start_time
+            """, (tutor_id, date))
+
+            single_lessons = [dict(row) for row in cursor.fetchall()]
+
+            # Объединяем регулярные и разовые занятия
+            all_lessons = regular_lessons + single_lessons
+
+            print(
+                f"📅 На {date} ({day_of_week}): {len(regular_lessons)} регулярных + {len(single_lessons)} разовых = {len(all_lessons)} занятий")
+
+            return all_lessons
 
         except sqlite3.Error as e:
             print(f"❌ Ошибка получения расписания на дату: {e}")

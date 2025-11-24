@@ -119,6 +119,15 @@ CREATE TABLE IF NOT EXISTS materials (
     FOREIGN KEY (tutor_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+-- Таблица для разовых занятий (если еще не существует)
+CREATE TABLE IF NOT EXISTS single_lessons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    schedule_id INTEGER NOT NULL,
+    lesson_date DATE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (schedule_id) REFERENCES schedule (id) ON DELETE CASCADE
+);
+
 
 -- Создание индексов для оптимизации
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
