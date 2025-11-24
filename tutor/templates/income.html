@@ -547,14 +547,6 @@
                             <option value="2025-12">Декабрь 2025</option>
                         </select>
                     </div>
-                    <div class="export-actions">
-                        <button class="btn-export" onclick="exportData()">
-                            📊 Экспорт в Excel
-                        </button>
-                        <button class="btn-report" onclick="generateReport()">
-                            📈 Сформировать отчет
-                        </button>
-                    </div>
                 </section>
 
                 <!-- Основная статистика -->
@@ -1065,13 +1057,10 @@
     // Кнопки периода сверху (пока только визуальная смена)
     function changePeriod(period) {
         const buttons = document.querySelectorAll('.period-btn');
-        buttons.forEach(btn => btn.classList.remove('active'));
+        buttons.forEach(btn => btn.classList.remove('active'));ме
         event.target.classList.add('active');
         console.log('Смена периода (визуально):', period);
     }
-
-    function exportData()  { alert('Экспорт данных в Excel (заглушка)'); }
-    function generateReport() { alert('Формирование отчета (заглушка)'); }
 </script>
 </body>
 </html>
