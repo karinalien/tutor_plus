@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from typing import Optional, Dict, Any
-
+import json
 
 class Database:
     def __init__(self, db_path='database/tutoring.db'):
@@ -378,7 +378,25 @@ class Database:
             return result['count'] if result else 0
 
         except sqlite3.Error as e:
-            print(f"❌ Ошибка получения количества занятий: {e}")
+            print(f"❌ Ошибка получения количества kakashek занятий: {e}")
             return 0
+        finally:
+            connection.close()
+
+    def save_generated_test(self, student_id: int, material_name: str, json_content: str):
+        connection = self.get_connection()
+        if not connection:
+            return None
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO tests (student_id, material_name, json_content)
+                VALUES (?, ?, ?)
+            """, (student_id, material_name, json_content))
+            connection.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            print("❌ Ошибка сохранения теста:", e)
+            return None
         finally:
             connection.close()

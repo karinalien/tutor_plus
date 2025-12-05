@@ -113,9 +113,10 @@ CREATE TABLE IF NOT EXISTS materials (
     exam_type VARCHAR(10) CHECK(exam_type IN ('oge', 'ege', 'both')) DEFAULT 'both',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    download_count INTEGER DEFAULT 0,
     FOREIGN KEY (tutor_id) REFERENCES users (id) ON DELETE CASCADE
-    ALTER TABLE materials ADD COLUMN download_count INTEGER DEFAULT 0;
 );
+
 
 -- Создание индексов для оптимизации
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
@@ -128,6 +129,17 @@ CREATE INDEX IF NOT EXISTS idx_student_progress_student ON student_progress(stud
 CREATE INDEX IF NOT EXISTS idx_income_month ON income(month_year);
 CREATE INDEX IF NOT EXISTS idx_materials_tutor_id ON materials(tutor_id);
 CREATE INDEX IF NOT EXISTS idx_materials_category ON materials(category);
+
+
+
+CREATE TABLE IF NOT EXISTS tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    material_name TEXT NOT NULL,
+    json_content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
 -- Вставка начальных данных (репетитор по умолчанию)
 INSERT OR IGNORE INTO users (username, password_hash, role, first_name, last_name, lesson_price, contact_info)

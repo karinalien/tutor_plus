@@ -284,36 +284,49 @@ def tests():
 
 @app.route('/tests/1')
 def test_1():
-    if 'user_id' not in session:
+    if 'user_id' not in session or session['role'] != 'student':
         return "Доступ запрещен. Необходима авторизация.", 403
-    
+
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        material_path = os.path.join(base_dir, 'llm', 'materials', 'z5.txt')
-        
-        if not os.path.exists(material_path):
-            return f"❌ Файл материала не найден: {material_path}\nТекущая директория: {os.getcwd()}", 404
-        
-        with open(material_path, 'r', encoding='utf-8') as f:
-            material_text = f.read()
+        db = Database()
+        connection = db.get_connection()
+        cursor = connection.cursor()
 
-        print(f"📝 Генерация теста из материала z5.txt...")
-        generated_test = generate_test_from_text(material_text)
+        cursor.execute("""
+            SELECT * FROM tests
+            WHERE student_id = ? AND material_name = 'z5'
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, (session['user_id'],))
 
-        session['generated_test'] = generated_test
-        session['test_material'] = material_text
-        session['test_material_name'] = 'z5'
-        
-        return render_template('test_1.html', 
-                             test=generated_test, 
-                             material=material_text,
-                             material_name='z5')
-    
+        row = cursor.fetchone()
+        connection.close()
+
+        if not row:
+            return "❌ Тест ещё не создан вашим репетитором.", 404
+
+        import json
+        test_json = row["json_content"]
+
+        try:
+            test_data = json.loads(test_json)
+        except:
+            test_data = {"error": "Ошибка парсинга JSON", "raw": test_json}
+
+        return render_template(
+            "test_1.html",
+            test=test_data,
+            test_id=row["id"]
+        )
+
     except Exception as e:
-        print(f"❌ Ошибка при генерации теста: {e}")
-        import traceback
-        traceback.print_exc()
-        return f"Ошибка при генерации теста: {str(e)}", 500
+        print("❌ Ошибка при загрузке теста:", e)
+        return f"Ошибка загрузки теста: {e}", 500
+
+    except Exception as e:
+        print("❌ Ошибка:", e)
+        return f"Ошибка: {e}", 500
+
 
 @app.route('/tests/2')
 def test_2():
@@ -689,6 +702,33 @@ def api_upload_material():
 
             print(f"✅ Материал загружен: {title} (ID: {material_id})")
 
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    material_text = f.read()
+
+                print("🧠 Автогенерация теста для нового материала...")
+                test_json = generate_test_from_text(material_text)
+
+                connection = db.get_connection()
+                cursor = connection.cursor()
+
+                cursor.execute("SELECT id FROM users WHERE created_by = ?", (session['user_id'],))
+                students = cursor.fetchall()
+
+                for s in students:
+                    student_id = s['id']
+                    db.save_generated_test(
+                        student_id=student_id,
+                        material_name=title,
+                        json_content=test_json
+                    )
+
+                connection.close()
+                print("✅ Тест успешно создан и отправлен ученикам!")
+
+            except Exception as e:
+                print(f"⚠️ Ошибка автогенерации теста: {e}")
+
             return jsonify({
                 'success': True,
                 'message': 'Материал успешно загружен',
@@ -719,7 +759,6 @@ def download_material(material_id):
 
         # Проверяем права доступа
         if session['role'] == 'student':
-            # Ученик может скачивать только материалы своего репетитора
             cursor.execute("""
                 SELECT u.created_by FROM users u 
                 WHERE u.id = ? AND u.created_by = ?
@@ -733,7 +772,6 @@ def download_material(material_id):
         file_path = material_dict['file_path']
 
         if not file_path or not os.path.exists(file_path):
-            # Если файла нет, создаем временный файл с информацией
             temp_content = f"Материал: {material_dict['title']}\n\n"
             temp_content += f"Описание: {material_dict.get('description', '')}\n"
             temp_content += f"Тип: {material_dict['file_type']}\n"
@@ -753,6 +791,21 @@ def download_material(material_id):
     except Exception as e:
         print(f"❌ Ошибка скачивания материала: {e}")
         return jsonify({'error': 'Ошибка скачивания'}), 500
+
+@app.route('/api/student/tests')
+def api_student_tests():
+    if 'user_id' not in session or session['role'] != 'student':
+        return jsonify({'success': False}), 403
+
+    student_id = session['user_id']
+    connection = db.get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM tests WHERE student_id = ? ORDER BY created_at DESC", (student_id,))
+    tests = [dict(r) for r in cursor.fetchall()]
+
+    connection.close()
+    return jsonify({'success': True, 'tests': tests})
 
 
 @app.route('/api/materials/<int:material_id>/preview')
@@ -859,4 +912,4 @@ if __name__ == '__main__':
     print("Откройте: http://localhost:5000")
     print("Тестовые данные:")
     print("Репетитор: логин 'tutor', пароль 'tutor'")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=4000)

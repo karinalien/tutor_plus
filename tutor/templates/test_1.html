@@ -1,74 +1,26 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Тест 1: Задание 5</title>
-    <link rel="stylesheet" href="/styles.css">
-    <style>
-        .test-content {
-            background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #88746b;
-            margin: 20px 0;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
-            line-height: 1.8;
-            color: #333;
-        }
-        
-        .test-content h3 {
-            color: #88746b;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #88746b;
-        }
-        
-        .error {
-            background: #ffe6e6;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #ff9999;
-            color: #cc0000;
-            margin: 20px 0;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <nav class="navbar">
-        <div class="nav-brand"><span>🧪 Тест 1</span></div>
-        <ul class="nav-menu">
-            <li><a href="/student-tests">Назад к тестам</a></li>
-            <li><a href="/student-cabinet">Кабинет</a></li>
-        </ul>
-    </nav>
-    <header class="header">
-        <div class="header-info">
-            <h1>Тест 1: Задание 5</h1>
-        </div>
-    </header>
-    <section class="login-section">
-        <div class="login-container">
-            {% if test %}
-                <div class="test-content">
-                    {{ test }}
-                </div>
-            {% else %}
-                <div class="loading">
-                    <h2>⏳ Генерация теста...</h2>
-                    <p>Пожалуйста, подождите. Тест генерируется на основе материала z5.txt</p>
-                </div>
-            {% endif %}
-        </div>
-    </section>
-</div>
-</body>
-</html>
+{% if test.error %}
+    <div class="error">
+        Ошибка обработки теста:<br>
+        {{ test.raw }}
+    </div>
+{% else %}
+    <div class="test-content">
+        <h3>Материал</h3>
+        <p>{{ test.material }}</p>
 
-
+        <h3>Вопросы</h3>
+        {% for q in test.questions %}
+            <div style="margin-bottom: 20px;">
+                <strong>{{ q.id }}. {{ q.question }}</strong><br>
+                <ul>
+                    <li>A: {{ q.options.A }}</li>
+                    <li>B: {{ q.options.B }}</li>
+                    <li>C: {{ q.options.C }}</li>
+                    <li>D: {{ q.options.D }}</li>
+                </ul>
+                <div><strong>Ответ: {{ q.correct }}</strong></div>
+            </div>
+            <hr>
+        {% endfor %}
+    </div>
+{% endif %}

@@ -3,7 +3,7 @@ import requests
 from requests.exceptions import ConnectionError, Timeout, RequestException
 
 LMSTUDIO_URL = "http://127.0.0.1:12345/v1/responses"
-LMSTUDIO_MODEL = "qwen/qwen3-4b"   
+LMSTUDIO_MODEL = "google/gemma-2-9b"
 
 
 def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens: int = 3000):
