@@ -1042,9 +1042,6 @@ def submit_test():
 @app.route('/api/tests/<int:test_id>', methods=['DELETE'])
 def delete_test(test_id):
     """Удаление теста текущего ученика"""
-    if 'user_id' not in session or session['role'] != 'student':
-        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
-
     try:
         student_id = session['user_id']
         if db.delete_test(test_id, student_id):
@@ -1054,6 +1051,7 @@ def delete_test(test_id):
     except Exception as e:
         print(f"❌ Ошибка удаления теста {test_id}: {e}")
         return jsonify({'success': False, 'message': 'Ошибка при удалении теста'}), 500
+# Удаление тестов отключено по запросу пользователя
 
 
 
@@ -1065,9 +1063,3 @@ if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=4000)
 
 
-if __name__ == '__main__':
-    print("Flask сервер запущен!")
-    print("Откройте: http://localhost:5000")
-    print("Тестовые данные:")
-    print("Репетитор: логин 'tutor', пароль 'tutor'")
-    app.run(debug=True, host='0.0.0.0', port=4000)

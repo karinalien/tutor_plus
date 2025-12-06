@@ -447,17 +447,7 @@ class Database:
             return False
         try:
             cursor = connection.cursor()
-            # Проверяем принадлежность теста ученику
-            cursor.execute("SELECT id FROM tests WHERE id = ? AND student_id = ?", (test_id, student_id))
-            test = cursor.fetchone()
-            if not test:
-                return False
-
-            # Удаляем связанные результаты и сам тест
-            cursor.execute("DELETE FROM test_results WHERE test_id = ? AND student_id = ?", (test_id, student_id))
-            cursor.execute("DELETE FROM tests WHERE id = ?", (test_id,))
-            connection.commit()
-            return True
+        # Удаление тестов отключено по запросу пользователя
         except sqlite3.Error as e:
             print(f"❌ Ошибка при удалении теста ID {test_id}: {e}")
             return False

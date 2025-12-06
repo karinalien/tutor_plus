@@ -48,7 +48,6 @@ def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens
         tasks = obj if isinstance(obj, list) else obj.get("tasks") or obj.get("questions") or []
         if not isinstance(tasks, list) or not tasks:
             return False
-
         def bad(s: str) -> bool:
             if not isinstance(s, str):
                 return True
@@ -63,7 +62,6 @@ def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens
             if t in {"{", "}", "[]", "[ ]", "()", "( )", "''", '""', "---", "--", "-"}:
                 return True
             return False
-
         for q in tasks:
             opts = q.get("options") if isinstance(q, dict) else None
             if not isinstance(opts, dict):
@@ -85,7 +83,7 @@ def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens
             data = response.json()
             # Стандартный парсинг ответа для chat/completions
             content = data["choices"][0]["message"]["content"]
-
+            
             text = content.strip()
             if _options_text_quality_ok(text):
                 return text
