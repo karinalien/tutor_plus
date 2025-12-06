@@ -43,6 +43,9 @@
         }
         .status-completed { color: #28a745; }
         .status-not-started { color: #c23a4c; }
+        .test-actions { display: flex; align-items: center; gap: 10px; }
+        .delete-btn { background: none; border: none; cursor: pointer; padding: 5px; font-size: 1.3em; color: #c9a89a; }
+        .delete-btn:hover { color: #d9534f; }
     </style>
 </head>
 <body>
@@ -110,9 +113,11 @@
 
                         testBlock.innerHTML = `
                             <h3>${test.material_name}</h3>
-                            <p>Дата создания: ${new Date(test.created_at).toLocaleDateString()}</p>
                             <p class="test-status ${statusClass}">${statusText}</p>
-                            <a href="${testUrl}" class="login-btn" style="padding: 8px 20px;">${buttonText}</a>
+                            <div class="test-actions">
+                                <a href="${testUrl}" class="login-btn" style="padding: 8px 20px;">${buttonText}</a>
+                                <button class="delete-btn" data-testid="${test.id}" title="Удалить тест">🗑️</button>
+                            </div>
                         `;
                         container.appendChild(testBlock);
                     });
@@ -126,6 +131,26 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         fetchTests();
+
+        // Делегируем обработку клика по кнопке удаления
+        document.getElementById('tests-container').addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-btn');
+            if (btn) {
+                const testId = btn.dataset.testid;
+                if (confirm('Удалить этот тест? Это действие необратимо.')) {
+                    fetch(`/api/tests/${testId}`, { method: 'DELETE' })
+                        .then(r => r.json())
+                        .then(data => {
+                            alert(data.message || (data.success ? 'Тест удален' : 'Ошибка удаления'));
+                            if (data.success) fetchTests();
+                        })
+                        .catch(err => {
+                            console.error('Ошибка удаления:', err);
+                            alert('Произошла ошибка при удалении теста.');
+                        });
+                }
+            }
+        });
     });
 </script>
 

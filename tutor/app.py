@@ -299,10 +299,13 @@ def show_test(test_id):
         cursor = connection.cursor()
 
         # Загружаем тест по ID
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM tests
             WHERE student_id = ? AND id = ?
-        """, (session['user_id'], test_id))
+            """,
+            (session['user_id'], test_id),
+        )
 
         row = cursor.fetchone()
         connection.close()
@@ -321,28 +324,59 @@ def show_test(test_id):
         except (json.JSONDecodeError, TypeError):
             test_data = {"error": "Ошибка парсинга JSON", "raw": test_json}
 
-        return render_template(
-            "test_1.html",
-            test=test_data,
-            test_id=row["id"]
-        )
+        # Для ID-роута используем единый шаблон test_1.html
+        return render_template("test_1.html", test=test_data, test_id=row["id"])
 
     except Exception as e:
         print("❌ Ошибка при загрузке теста:", e)
         return f"Ошибка загрузки теста: {e}", 500
 
-    except Exception as e:
-        print("❌ Ошибка:", e)
-        return f"Ошибка: {e}", 500
-
 
 @app.route('/tests/2')
 def test_2():
-    return render_template('test_2.html')
+    # Открываем тест по названию материала 'test2'
+    return show_test_by_material('test2', 'test_2.html')
 
 @app.route('/tests/3')
 def test_3():
-    return render_template('test_3.html')
+    # Открываем тест по названию материала 'test3'
+    return show_test_by_material('test3', 'test_3.html')
+
+def show_test_by_material(material_name: str, template_name: str):
+    if 'user_id' not in session or session['role'] != 'student':
+        return "Доступ запрещен. Необходима авторизация.", 403
+
+    try:
+        db = Database()
+        connection = db.get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute(
+            """
+            SELECT * FROM tests
+            WHERE student_id = ? AND material_name = ?
+            """,
+            (session['user_id'], material_name),
+        )
+
+        row = cursor.fetchone()
+        connection.close()
+
+        if not row:
+            return "❌ Тест не найден.", 404
+
+        import json
+        test_json = row["json_content"]
+        try:
+            test_data = json.loads(test_json) if isinstance(test_json, str) else test_json
+        except (json.JSONDecodeError, TypeError):
+            test_data = {"error": "Ошибка парсинга JSON", "raw": test_json}
+
+        return render_template(template_name, test=test_data, test_id=row["id"])
+
+    except Exception as e:
+        print("❌ Ошибка при загрузке теста по материалу:", e)
+        return f"Ошибка загрузки теста: {e}", 500
 
 @app.route('/timetable')
 #расписание
@@ -1004,6 +1038,22 @@ def submit_test():
         print(f"❌ Ошибка при обработке результатов теста: {e}")
         return jsonify({'success': False, 'message': 'Внутренняя ошибка сервера'}), 500
 
+
+@app.route('/api/tests/<int:test_id>', methods=['DELETE'])
+def delete_test(test_id):
+    """Удаление теста текущего ученика"""
+    if 'user_id' not in session or session['role'] != 'student':
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    try:
+        student_id = session['user_id']
+        if db.delete_test(test_id, student_id):
+            return jsonify({'success': True, 'message': 'Тест успешно удален'})
+        else:
+            return jsonify({'success': False, 'message': 'Тест не найден или нет прав'}), 404
+    except Exception as e:
+        print(f"❌ Ошибка удаления теста {test_id}: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка при удалении теста'}), 500
 
 
 
