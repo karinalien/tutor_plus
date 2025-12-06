@@ -243,27 +243,7 @@
                         </div>
                     </header>
 
-                    <!-- Быстрая статистика -->
-                    <section class="quick-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon">📅</div>
-                            <h3>Занятий всего</h3>
-                            <p class="stat-number" id="lessonsCount">0</p>
-                            <p class="stat-description">проведено</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">📚</div>
-                            <h3>Доступных материалов</h3>
-                            <p class="stat-number" id="materialsCount">0</p>
-                            <p class="stat-description">документов</p>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🧪</div>
-                            <h3>Пройдено тестов</h3>
-                            <p class="stat-number" id="testsCount">0</p>
-                            <p class="stat-description">средний балл: <span id="avgScore">-</span>%</p>
-                        </div>
-                    </section>
+                    <!-- Быстрая статистика отключена -->
 
                     <!-- Быстрый доступ к разделам -->
                     <section class="quick-access">
@@ -318,33 +298,10 @@
                 }
             });
 
-            // Загружаем статистику
-            loadStats();
+            // Быстрая статистика отключена
         });
 
-        // Загрузка статистики
-        async function loadStats() {
-            try {
-                // Загружаем расписание для подсчета занятий
-                const scheduleResponse = await fetch('/api/schedule');
-                const scheduleData = await scheduleResponse.json();
-                const lessonsCount = scheduleData.schedule ? scheduleData.schedule.length : 0;
-                document.getElementById('lessonsCount').textContent = lessonsCount;
-
-                // Загружаем материалы
-                const materialsResponse = await fetch('/api/materials');
-                const materialsData = await materialsResponse.json();
-                const materialsCount = materialsData.materials ? materialsData.materials.length : 0;
-                document.getElementById('materialsCount').textContent = materialsCount;
-
-                // Тесты (пока заглушка)
-                document.getElementById('testsCount').textContent = '0';
-                document.getElementById('avgScore').textContent = '-';
-
-            } catch (error) {
-                console.error('Ошибка загрузки статистики:', error);
-            }
-        }
+        // Загрузка статистики отключена
 
         // Проверяем авторизацию при загрузке
         fetch('/api/check-auth')
