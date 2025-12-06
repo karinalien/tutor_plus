@@ -141,6 +141,19 @@ CREATE TABLE IF NOT EXISTS tests (
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Таблица для хранения результатов тестов
+CREATE TABLE IF NOT EXISTS test_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    percentage REAL NOT NULL,
+    correct_count INTEGER NOT NULL,
+    total_count INTEGER NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (test_id) REFERENCES tests(id),
+    FOREIGN KEY (student_id) REFERENCES users(id)
+);
+
 -- Вставка начальных данных (репетитор по умолчанию)
 INSERT OR IGNORE INTO users (username, password_hash, role, first_name, last_name, lesson_price, contact_info)
 VALUES ('tutor', 'tutor', 'tutor', 'Главный', 'Репетитор', 1500.00, 'tutor@example.com');

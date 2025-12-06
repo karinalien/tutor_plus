@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask, render_template, send_from_directory, send_file, request, jsonify, session
 import os
 import uuid
@@ -280,10 +282,14 @@ def student_cabinet():
 @app.route('/tests')
 #тесты
 def tests():
-    return render_template('tests.html')
+    """Страница-меню со списком тестов."""
+    if 'user_id' not in session or session['role'] != 'student':
+        return "Доступ запрещен.", 403
+    return render_template('student_tests.html')
 
-@app.route('/tests/1')
-def test_1():
+
+@app.route('/tests/<int:test_id>')
+def show_test(test_id):
     if 'user_id' not in session or session['role'] != 'student':
         return "Доступ запрещен. Необходима авторизация.", 403
 
@@ -292,19 +298,17 @@ def test_1():
         connection = db.get_connection()
         cursor = connection.cursor()
 
-        # Загружаем тест по имени материала 'test1'
+        # Загружаем тест по ID
         cursor.execute("""
             SELECT * FROM tests
-            WHERE student_id = ? AND material_name = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-        """, (session['user_id'], 'test1'))
+            WHERE student_id = ? AND id = ?
+        """, (session['user_id'], test_id))
 
         row = cursor.fetchone()
         connection.close()
 
         if not row:
-            return "❌ Тест ещё не создан вашим репетитором.", 404
+            return "❌ Тест не найден.", 404
 
         import json
         test_json = row["json_content"]
@@ -804,7 +808,20 @@ def api_student_tests():
     connection = db.get_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT * FROM tests WHERE student_id = ? ORDER BY created_at DESC", (student_id,))
+    # Получаем все тесты и присоединяем результаты, если они есть
+    cursor.execute("""
+        SELECT 
+            t.id,
+            t.material_name,
+            t.created_at,
+            tr.percentage,
+            tr.submitted_at
+        FROM tests t
+        LEFT JOIN test_results tr ON t.id = tr.test_id AND tr.student_id = t.student_id
+        WHERE t.student_id = ?
+        ORDER BY t.created_at DESC
+    """, (student_id,))
+    
     tests = [dict(r) for r in cursor.fetchall()]
 
     connection.close()
@@ -909,6 +926,94 @@ def update_download_stats(material_id):
     except Exception as e:
         print(f"❌ Ошибка обновления статистики: {e}")
         return jsonify({'success': False}), 500
+
+@app.route('/api/test/submit', methods=['POST'])
+def submit_test():
+    """API для обработки результатов теста и подсчета процента правильных ответов."""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Необходима авторизация'}), 401
+
+    data = request.get_json()
+    test_id = data.get('test_id')
+    answers = data.get('answers')  # Ожидаем объект вида {'1': 'A', '2': 'C'}
+
+    if not test_id or not answers:
+        return jsonify({'success': False, 'message': 'Неполные данные'}), 400
+
+    try:
+        connection = db.get_connection()
+        cursor = connection.cursor()
+
+        # Получаем тест из базы, чтобы узнать правильные ответы
+        cursor.execute("SELECT json_content FROM tests WHERE id = ?", (test_id,))
+        row = cursor.fetchone()
+
+        if not row:
+            return jsonify({'success': False, 'message': 'Тест не найден'}), 404
+
+        import json
+        test_data = json.loads(row['json_content'])
+        questions = test_data.get('questions', [])
+
+        correct_answers_count = 0
+        total_questions = len(questions)
+
+        # Сравниваем ответы и формируем детальный результат
+        detailed_results = []
+        for question in questions:
+            question_id = str(question['id'])
+            correct_answer = question['correct']
+            student_answer = answers.get(question_id)
+            is_correct = student_answer == correct_answer
+
+            if is_correct:
+                correct_answers_count += 1
+            
+            detailed_results.append({
+                'question_id': question_id,
+                'question_text': question['question'],
+                'student_answer': student_answer,
+                'correct_answer': correct_answer,
+                'is_correct': is_correct
+            })
+        
+        # Считаем процент
+        percentage = (correct_answers_count / total_questions) * 100 if total_questions > 0 else 0
+
+        # Сохраняем результат в базу данных
+        db.save_test_result(
+            student_id=session['user_id'],
+            test_id=test_id,
+            percentage=percentage,
+            correct_count=correct_answers_count,
+            total_count=total_questions
+        )
+
+        connection.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Результат успешно рассчитан',
+            'percentage': round(percentage, 2),
+            'correct_count': correct_answers_count,
+            'total_count': total_questions,
+            'results': detailed_results
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка при обработке результатов теста: {e}")
+        return jsonify({'success': False, 'message': 'Внутренняя ошибка сервера'}), 500
+
+
+
+
+if __name__ == '__main__':
+    print("Flask сервер запущен!")
+    print("Откройте: http://localhost:5000")
+    print("Тестовые данные:")
+    print("Репетитор: логин 'tutor', пароль 'tutor'")
+    app.run(debug=True, host='0.0.0.0', port=4000)
+
 
 if __name__ == '__main__':
     print("Flask сервер запущен!")

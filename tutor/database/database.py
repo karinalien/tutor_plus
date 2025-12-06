@@ -400,3 +400,42 @@ class Database:
             return None
         finally:
             connection.close()
+
+    def save_test_result(self, student_id: int, test_id: int, percentage: float, correct_count: int, total_count: int):
+        """Сохранение результатов теста в базу данных."""
+        connection = self.get_connection()
+        if not connection:
+            return False
+        try:
+            cursor = connection.cursor()
+            # Проверяем, есть ли уже результат для этого теста
+            cursor.execute("SELECT id FROM test_results WHERE student_id = ? AND test_id = ?", (student_id, test_id))
+            existing_result = cursor.fetchone()
+
+            if existing_result:
+                # Обновляем существующий результат
+                cursor.execute("""
+                    UPDATE test_results
+                    SET percentage = ?, correct_count = ?, total_count = ?, submitted_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (percentage, correct_count, total_count, existing_result['id']))
+                print(f"🔄 Результат теста ID {test_id} для студента ID {student_id} обновлен.")
+            else:
+                # Вставляем новый результат
+                cursor.execute("""
+                    INSERT INTO test_results (student_id, test_id, percentage, correct_count, total_count)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (student_id, test_id, percentage, correct_count, total_count))
+                print(f"✅ Результат теста ID {test_id} для студента ID {student_id} сохранен.")
+            
+            connection.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"❌ Ошибка сохранения результатов теста: {e}")
+            return False
+        finally:
+            connection.close()
+
+    def close(self):
+        # Этот метод может быть полезен для явного закрытия, если это потребуется
+        pass
