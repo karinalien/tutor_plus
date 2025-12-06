@@ -1,26 +1,84 @@
-{% if test.error %}
-    <div class="error">
-        Ошибка обработки теста:<br>
-        {{ test.raw }}
-    </div>
-{% else %}
-    <div class="test-content">
-        <h3>Материал</h3>
-        <p>{{ test.material }}</p>
-
-        <h3>Вопросы</h3>
-        {% for q in test.questions %}
-            <div style="margin-bottom: 20px;">
-                <strong>{{ q.id }}. {{ q.question }}</strong><br>
-                <ul>
-                    <li>A: {{ q.options.A }}</li>
-                    <li>B: {{ q.options.B }}</li>
-                    <li>C: {{ q.options.C }}</li>
-                    <li>D: {{ q.options.D }}</li>
-                </ul>
-                <div><strong>Ответ: {{ q.correct }}</strong></div>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест 1 - Кабинет ученика</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="container">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span>📚 Кабинет ученика</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Главная</a></li>
+            <li><a href="/cabinet">Выйти</a></li>
+        </ul>
+    </nav>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3 class="dashboard-title">Панель ученика</h3>
             </div>
-            <hr>
-        {% endfor %}
+            <ul class="sidebar-menu">
+                <li class="menu-item"><a href="/student-cabinet">📊 Обзор</a></li>
+                <li class="menu-item"><a href="/student-cabinet#schedule">📅 Расписание</a></li>
+                <li class="menu-item"><a href="/student-cabinet#materials">📚 Материалы</a></li>
+                <li class="menu-item active"><a href="/tests">🧪 Тесты</a></li>
+            </ul>
+        </div>
+        <div class="content-area">
+            <header class="header">
+                <div class="header-info">
+                    <h1>🧪 Тест 1</h1>
+                    <h2>Проверьте свои знания</h2>
+                </div>
+            </header>
+            <section class="login-section">
+                {% if test.error %}
+                    <div class="error">
+                        Ошибка обработки теста:<br>
+                        {{ test.raw }}
+                    </div>
+                {% else %}
+                <form id="test-form">
+                    <div class="test-content">
+                        {% for q in test.questions %}
+                            <div class="question-block" style="margin-bottom: 40px; padding: 25px 20px; background: #f7f3ed; border-radius: 12px; box-shadow: 0 2px 8px rgba(136,116,107,0.07);">
+                                <div style="font-size: 1.4em; font-weight: bold; margin-bottom: 12px; color: #6B5B73;">{{ loop.index }} Задание</div>
+                                <div style="white-space: pre-line; font-size: 1.08em; margin-bottom: 10px; color: #222;">{{ q.material }}</div>
+                                <div style="font-style: italic; color: #444; margin-bottom: 16px;">{{ q.question }}</div>
+                                <div class="options">
+                                    <label style="display:block; margin-bottom: 5px;">
+                                        <input type="radio" name="q{{ loop.index }}" value="A" required> A: {{ q.options.A }}
+                                    </label>
+                                    <label style="display:block; margin-bottom: 5px;">
+                                        <input type="radio" name="q{{ loop.index }}" value="B"> B: {{ q.options.B }}
+                                    </label>
+                                    <label style="display:block; margin-bottom: 5px;">
+                                        <input type="radio" name="q{{ loop.index }}" value="C"> C: {{ q.options.C }}
+                                    </label>
+                                    <label style="display:block; margin-bottom: 5px;">
+                                        <input type="radio" name="q{{ loop.index }}" value="D"> D: {{ q.options.D }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="login-btn" style="margin-top: 20px;">Завершить</button>
+                    </div>
+                </form>
+                <script>
+                    document.getElementById('test-form').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        window.location.href = '/tests/1/result';
+                    });
+                </script>
+                {% endif %}
+            </section>
+        </div>
     </div>
-{% endif %}
+</div>
+</body>
+</html>

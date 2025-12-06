@@ -292,12 +292,13 @@ def test_1():
         connection = db.get_connection()
         cursor = connection.cursor()
 
+        # Загружаем тест по имени материала 'test1'
         cursor.execute("""
             SELECT * FROM tests
-            WHERE student_id = ? AND material_name = 'z5'
+            WHERE student_id = ? AND material_name = ?
             ORDER BY created_at DESC
             LIMIT 1
-        """, (session['user_id'],))
+        """, (session['user_id'], 'test1'))
 
         row = cursor.fetchone()
         connection.close()
@@ -309,8 +310,11 @@ def test_1():
         test_json = row["json_content"]
 
         try:
-            test_data = json.loads(test_json)
-        except:
+            if isinstance(test_json, str):
+                test_data = json.loads(test_json)
+            else:
+                test_data = test_json
+        except (json.JSONDecodeError, TypeError):
             test_data = {"error": "Ошибка парсинга JSON", "raw": test_json}
 
         return render_template(
@@ -517,12 +521,11 @@ def test_result():
 def generate_test():
     data = request.get_json()
     material = data.get("text", "")
-    material_name = data.get("material_name", "z5")
 
     if not material:
         return jsonify({"test": "❌ Ошибка: Не указан материал для генерации теста"}), 400
 
-    result = generate_test_from_text(material, material_name=material_name)
+    result = generate_test_from_text(material)
 
     session['generated_test'] = result
     session['test_material'] = material
