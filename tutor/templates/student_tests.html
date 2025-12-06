@@ -10,24 +10,10 @@
             color: #FEFCF8 !important;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
-        .header-info h1 {
+        .header-info h1, .header-info h2, .subtitle {
             color: #FEFCF8;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
-        .header-info h2 {
-            color: #FEFCF8;
-            opacity: 0.9;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
-        .subtitle {
-            color: #FEFCF8;
-            opacity: 0.8;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
         .test-block {
             background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
             padding: 25px;
@@ -38,196 +24,115 @@
             position: relative;
             overflow: hidden;
         }
-
-        .test-block::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #88746b, #6B5B73);
-        }
-
         .test-block:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(136, 116, 107, 0.15);
         }
-
         .test-block h3 {
             color: #88746b;
             margin: 0 0 10px 0;
             font-size: 1.3em;
         }
-
         .test-block p {
             color: #666;
             margin: 0 0 15px 0;
         }
-
-        .results-table {
-            background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #88746b;
-            overflow-x: auto;
+        .test-status {
+            font-weight: bold;
+            margin-bottom: 15px;
         }
-
-        .results-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .results-table th {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 2px solid #88746b;
-            color: #88746b;
-            font-weight: 600;
-        }
-
-        .results-table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            color: #333;
-        }
-
-        .results-table tr:hover {
-            background: rgba(136, 116, 107, 0.05);
-        }
+        .status-completed { color: #28a745; }
+        .status-not-started { color: #c23a4c; }
+        .test-actions { display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar">
-            <div class="nav-brand">
-                <span>📚 Кабинет ученика</span>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="/">Главная</a></li>
-                <li><a href="/cabinet">Выйти</a></li>
+<div class="container">
+    <nav class="navbar">
+        <div class="nav-brand"><span>📚 Кабинет ученика</span></div>
+        <ul class="nav-menu">
+            <li><a href="/">Главная</a></li>
+            <li><a href="/cabinet">Выйти</a></li>
+        </ul>
+    </nav>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header"><h3 class="dashboard-title">Панель ученика</h3></div>
+            <ul class="sidebar-menu">
+                <li class="menu-item"><a href="/student-cabinet">📊 Обзор</a></li>
+                <li class="menu-item"><a href="/student-cabinet#schedule">📅 Расписание</a></li>
+                <li class="menu-item"><a href="/student-cabinet#materials">📚 Материалы</a></li>
+                <li class="menu-item active"><a href="/student-tests">🧪 Тесты</a></li>
             </ul>
-        </nav>
-
-        <div class="main-container">
-            <!-- Боковое меню -->
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <h3 class="dashboard-title">Панель ученика</h3>
+        </div>
+        <div class="content-area">
+            <header class="header">
+                <div class="header-info">
+                    <h1>🧪 Тесты и задания</h1>
+                    <h2 class="subtitle">Проверка знаний</h2>
                 </div>
-                <ul class="sidebar-menu">
-                    <li class="menu-item">
-                        <a href="/student-cabinet" style="display: block; text-decoration: none; color: inherit;">
-                            📊 Обзор
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/student-schedule" style="display: block; text-decoration: none; color: inherit;">
-                            📅 Расписание
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/student-materials" style="display: block; text-decoration: none; color: inherit;">
-                            📚 Материалы
-                        </a>
-                    </li>
-                    <li class="menu-item active">
-                        <a href="/student-tests" style="display: block; text-decoration: none; color: inherit;">
-                            🧪 Тесты
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Основной контент -->
-            <div class="content-area">
-                <header class="header">
-                    <div class="header-info">
-                        <h1>🧪 Тесты и задания</h1>
-                        <h2>Проверка знаний</h2>
-                        <p class="subtitle">Выполняйте тесты для проверки своих знаний и подготовки к экзаменам</p>
-                    </div>
-                </header>
-
-                <section class="login-section">
-                    <h2>Доступные тесты</h2>
-                    <div class="login-container">
-                        <div class="test-block">
-                            <h3>Тест 1: Логика и основы кодирования</h3>
-                            <p>Поработайте с логическими выражениями.</p>
-                            <a href="/tests/1"><button class="login-btn">Перейти</button></a>
-                        </div>
-
-                        <div class="test-block">
-                            <h3>Тест 2: Алгоритмы и программирование</h3>
-                            <p>Проверка знаний основ программирования.</p>
-                            <a href="/tests/2"><button class="login-btn">Перейти</button></a>
-                        </div>
-
-                        <div class="test-block">
-                            <h3>Тест 3: Пробник</h3>
-                            <p>Проверьте накопленные за блок знания.</p>
-                            <a href="/tests/3"><button class="login-btn">Перейти</button></a>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="login-section">
-                    <h2>📊 Результаты тестов</h2>
-                    <div class="login-container">
-                        <div class="results-table">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Тест</th>
-                                        <th>Дата прохождения</th>
-                                        <th>Результат</th>
-                                        <th>Статус</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Тест 1: Логика и основы кодирования</td>
-                                        <td>15.05.2024</td>
-                                        <td>85%</td>
-                                        <td><span style="color: #51cf66;">✓ Завершен</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Тест 2: Алгоритмы и программирование</td>
-                                        <td>10.05.2024</td>
-                                        <td>92%</td>
-                                        <td><span style="color: #51cf66;">✓ Завершен</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Тест 3: Пробник</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td><span style="color: #ffd43b;">⏳ Не начат</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-            </div>
+            </header>
+            <section class="login-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: #6B5B73;">Доступные тесты</h2>
+                </div>
+                <div id="tests-container">
+                    <!-- Сюда будут динамически добавляться блоки с тестами -->
+                </div>
+            </section>
         </div>
     </div>
+</div>
 
-    <script>
-        // Проверяем авторизацию при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/check-auth')
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.authenticated || data.user.role !== 'student') {
-                        window.location.href = '/cabinet';
+<script>
+    function fetchTests() {
+        fetch('/api/student/tests')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.getElementById('tests-container');
+                    container.innerHTML = ''; 
+
+                    if (data.tests.length === 0) {
+                        container.innerHTML = '<p>У вас пока нет доступных тестов.</p>';
+                        return;
                     }
-                })
-                .catch(error => {
-                    console.error('Ошибка проверки авторизации:', error);
-                });
-        });
-    </script>
+
+                    data.tests.forEach(test => {
+                        const testBlock = document.createElement('div');
+                        testBlock.className = 'test-block';
+
+                        const statusText = test.percentage !== null 
+                            ? `Пройден: ${test.percentage.toFixed(1)}%` 
+                            : 'Не пройден';
+                        const statusClass = test.percentage !== null ? 'status-completed' : 'status-not-started';
+                        const buttonText = test.percentage !== null ? 'Пересдать' : 'Перейти';
+                        const testUrl = `/tests/${test.id}`;
+
+                        testBlock.innerHTML = `
+                            <h3>${test.material_name}</h3>
+                            <p class="test-status ${statusClass}">${statusText}</p>
+                            <div class="test-actions">
+                                <a href="${testUrl}" class="login-btn" style="padding: 8px 20px;">${buttonText}</a>
+                            </div>
+                        `;
+                        container.appendChild(testBlock);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки тестов:', error);
+                document.getElementById('tests-container').innerHTML = '<p>Произошла ошибка при загрузке тестов.</p>';
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchTests();
+
+        // Удаление тестов отключено
+    });
+</script>
+
 </body>
 </html>
 

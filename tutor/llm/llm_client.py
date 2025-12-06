@@ -1,76 +1,140 @@
-import os
+import json
+import time
 import requests
 from requests.exceptions import ConnectionError, Timeout, RequestException
-from full_prompt import build_prompt
 
-LMSTUDIO_URL = "http://127.0.0.1:12345/v1/chat/completions"
-LMSTUDIO_MODEL = "google/gemma-3-4b"
-MATERIAL_FILE = "z5.txt"
-
-
-def load_material() -> str:
-    if not os.path.exists(MATERIAL_FILE):
-        return f"❌ Файл {MATERIAL_FILE} не найден!"
-
-    with open(MATERIAL_FILE, "r", encoding="utf-8") as f:
-        return f.read()
+# Обновленный URL для соответствия стандарту OpenAI
+LMSTUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
+LMSTUDIO_MODEL = "google/gemma-2-9b"
 
 
-def generate_test_from_text(max_retries=2):
-    material_text = load_material()
-    if material_text.startswith("❌"):
-        return material_text
-    prompt = build_prompt(material_text)
+def generate_test_from_text(material_text: str, max_retries: int = 2, max_tokens: int = 4096):
+    system_prompt = (
+        "Ты — ассистент для создания тестов. Сгенерируй JSON-объект с тестовыми заданиями на основе предоставленного текста. "
+        "Каждое задание включает: id, material, question, options (A,B,C,D), correct. "
+        "Очень важно: не копируй численные значения из исходного материала. Вместо этого генерируй новые, правдоподобные числа (например, другие длины, суммы, проценты, количества), сохраняя логику темы. "
+        "Числа в заданиях должны отличаться от исходных, но быть реалистичными и непротиворечивыми, и оставаться в той же единице измерения. "
+        "Качество вариантов ответов: каждый вариант должен быть осмысленной русскоязычной строкой (не пустой), без одиночных символов, скобок, кавычек или наборов знаков. Не допускаются варианты вроде '}', '{', '[]', '---'. Длина 3–120 символов. "
+        "Поле correct должно быть одной из букв 'A', 'B', 'C', 'D'. "
+        "Ответ строго в формате JSON."
+    )
+
+    user_prompt = (
+        "Сгенерируй 5–7 заданий по теме текста. Для каждого задания: уникальный `material`, отдельный `question`, 4 варианта `options`, поле `correct`. "
+        "ВНИМАНИЕ: используй новые числа, не беря их из исходного текста. Меняй параметры (размеры, количества, проценты, суммы) так, чтобы они соответствовали теме, но не совпадали с материалом. "
+        "Не включай формулировку вопроса в `material` — она должна быть только в `question`. "
+        "Убедись, что варианты ответов — нормальные фразы на русском, без бессмысленных символов.\n\n"
+        f"Текст для анализа:\n{material_text}"
+    )
 
     payload = {
         "model": LMSTUDIO_MODEL,
         "messages": [
-            {"role": "system",
-             "content": "Ты — генератор тестов. Ты создаешь вопросы строго по требованиям пользователя."},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
         ],
-        "temperature": 0.1,
-        "max_tokens": 4000
+        "response_format": {
+            "type": "text"
+        },
+        "temperature": 0.65,
+        "max_tokens": max_tokens
     }
+
+    def _options_text_quality_ok(json_text: str) -> bool:
+        try:
+            obj = json.loads(json_text)
+        except Exception:
+            return False
+        tasks = obj if isinstance(obj, list) else obj.get("tasks") or obj.get("questions") or []
+        if not isinstance(tasks, list) or not tasks:
+            return False
+        def bad(s: str) -> bool:
+            if not isinstance(s, str):
+                return True
+            t = s.strip()
+            if len(t) < 3 or len(t) > 120:
+                return True
+            # фильтры по бессмысленным вариантам
+            letters = sum(1 for ch in t if ch.isalpha())
+            if letters < max(1, len(t) // 6):
+                return True
+
+            if t in {"{", "}", "[]", "[ ]", "()", "( )", "''", '""', "---", "--", "-"}:
+                return True
+            return False
+        for q in tasks:
+            opts = q.get("options") if isinstance(q, dict) else None
+            if not isinstance(opts, dict):
+                return False
+            for k in ["A", "B", "C", "D"]:
+                if k not in opts or bad(opts[k]):
+                    return False
+            corr = q.get("correct")
+            if corr not in {"A", "B", "C", "D"}:
+                return False
+        return True
 
     for attempt in range(max_retries + 1):
         try:
-            response = requests.post(LMSTUDIO_URL, json=payload, timeout=240)
-
-            if response.status_code == 503:
-                if attempt < max_retries:
-                    continue
-                return "❌ LM Studio ответил 503 (модель не готова или перегружена)."
-
-            if response.status_code == 404:
-                return "❌ Модель не найдена. Проверь название модели в LM Studio."
-
-            if response.status_code == 500:
-                return "❌ Внутренняя ошибка LM Studio (500). Перезапусти модель."
-
+            print("🤖 Отправка запроса в LM Studio...")
+            response = requests.post(LMSTUDIO_URL, json=payload, timeout=300)
             response.raise_for_status()
 
             data = response.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            if not content:
-                return "❌ Ошибка: пустой ответ от модели."
+            # Стандартный парсинг ответа для chat/completions
+            content = data["choices"][0]["message"]["content"]
+            
+            text = content.strip()
+            if _options_text_quality_ok(text):
+                return text
+            else:
+                print("⚠️ Низкое качество вариантов ответов. Повторная генерация с уточняющей инструкцией...")
+                payload_retry = {
+                    "model": LMSTUDIO_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                        {"role": "user", "content": (
+                            "Пересоздай варианты ответов так, чтобы каждый был осмысленной русскоязычной фразой, "
+                            "без одиночных символов, скобок и мусора. Сохрани структуру JSON и букву в `correct`."
+                        )}
+                    ],
+                    "response_format": {"type": "text"},
+                    "temperature": 0.7,
+                    "max_tokens": max_tokens
+                }
+                response2 = requests.post(LMSTUDIO_URL, json=payload_retry, timeout=300)
+                response2.raise_for_status()
+                data2 = response2.json()
+                content2 = data2["choices"][0]["message"]["content"].strip()
+                if _options_text_quality_ok(content2):
+                    return content2
+                # если снова плохо — вернем исходный текст, чтобы не ломать поток
+                return text
 
-            return content.strip()
-
-        except ConnectionError:
-            if attempt < max_retries:
-                continue
-            return "❌ Ошибка подключения: LM Studio не отвечает."
-
-        except Timeout:
-            if attempt < max_retries:
-                continue
-            return "❌ Таймаут: модель слишком долго формирует ответ."
-
+        except (ConnectionError, Timeout) as e:
+            error_message = f"❌ Ошибка подключения к LM Studio: {e}. Убедитесь, что сервер запущен."
+            print(error_message)
+            if attempt >= max_retries:
+                return json.dumps({"error": error_message})
         except RequestException as e:
-            return f"❌ Ошибка HTTP: {str(e)}"
-
+            error_message = f"❌ Ошибка запроса: {e}. Ответ сервера: {response.text if 'response' in locals() else 'N/A'}"
+            print(error_message)
+            if attempt >= max_retries:
+                return json.dumps({"error": error_message})
+        except (KeyError, IndexError) as e:
+            error_message = f"❌ Ошибка парсинга ответа от LM Studio: {e}. Ответ: {data}"
+            print(error_message)
+            if attempt >= max_retries:
+                return json.dumps({"error": error_message})
         except Exception as e:
-            return f"❌ Неожиданная ошибка: {str(e)}"
+            error_message = f"❌ Неизвестная ошибка: {e}"
+            print(error_message)
+            if attempt < max_retries:
+                print(f"Попытка {attempt + 1} из {max_retries + 1}. Повтор через 2 секунды...")
+                time.sleep(2)
+                continue
+            return json.dumps({"error": error_message})
 
-    return "❌ Ошибка: не удалось получить ответ от модели."
+    return json.dumps({"error": "Не удалось получить ответ после нескольких попыток."})
+
