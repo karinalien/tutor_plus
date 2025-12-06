@@ -1060,6 +1060,6 @@ if __name__ == '__main__':
     print("Откройте: http://localhost:5000")
     print("Тестовые данные:")
     print("Репетитор: логин 'tutor', пароль 'tutor'")
-    app.run(debug=True, host='0.0.0.0', port=4000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
 
