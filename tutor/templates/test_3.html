@@ -2,28 +2,142 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Тест 3: Пробник</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест - Кабинет ученика</title>
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 <div class="container">
     <nav class="navbar">
-        <div class="nav-brand"><span> Пробник </span></div>
+        <div class="nav-brand">
+            <span>📚 Кабинет ученика</span>
+        </div>
         <ul class="nav-menu">
-            <li><a href="/tests">Назад к тестам</a></li>
+            <li><a href="/">Главная</a></li>
+            <li><a href="/cabinet">Выйти</a></li>
         </ul>
     </nav>
-    <header class="header">
-        <div class="header-info">
-            <h1> Тест 3: Пробник</h1>
-            <p>Проверьте накопленные за блок знания.</p>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3 class="dashboard-title">Панель ученика</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item"><a href="/student-cabinet">📊 Обзор</a></li>
+                <li class="menu-item"><a href="/student-cabinet#schedule">📅 Расписание</a></li>
+                <li class="menu-item"><a href="/student-cabinet#materials">📚 Материалы</a></li>
+                <li class="menu-item active"><a href="/tests">🧪 Тесты</a></li>
+            </ul>
         </div>
-    </header>
-    <section class="login-section">
-        <div class="login-container">
-            <h2>Тест ещё не активен </h2>
+        <div class="content-area">
+            <header class="header">
+                <div class="header-info">
+                    <h1>🧪 {{ test.material_name or 'Тест' }}</h1>
+                    <h2>Проверьте свои знания</h2>
+                </div>
+            </header>
+            <section class="login-section">
+                {% if test.error %}
+                    <div class="error">
+                        Ошибка обработки теста:<br>
+                        {{ test.raw }}
+                    </div>
+                {% else %}
+                <form id="test-form">
+                    <div class="test-content">
+                        <h3>Вопросы</h3>
+                        {% for q in test.questions %}
+                            <div class="question-block" style="margin-bottom: 40px; padding: 25px 20px; background: #f7f3ed; border-radius: 12px; box-shadow: 0 2px 8px rgba(136,116,107,0.07);">
+                                <div style="font-size: 1.4em; font-weight: bold; margin-bottom: 12px; color: #6B5B73;">{{ loop.index }} Задание</div>
+                                <div style="white-space: pre-line; font-size: 1.08em; margin-bottom: 10px; color: #222;">{{ q.material }}</div>
+                                <div style="font-style: italic; color: #444; margin-bottom: 16px;">{{ q.question }}</div>
+                                                                <div class="options">
+                                    {% for key, value in q.options.items() %}
+                                    <label style="display:block; margin-bottom: 5px;">
+                                        <input type="radio" name="q{{ q.id }}" value="{{ key }}" required> {{ key }}: {{ value }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="login-btn" style="margin-top: 20px;">Завершить</button>
+                    </div>
+                </form>
+                <div id="result-container" style="display:none; margin-top: 30px;">
+                    <div class="result-summary" style="padding: 25px 20px; background: #6B5B73; color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.8em;">Результаты теста</h3>
+                        <p style="margin: 0; font-size: 1.2em;">Процент правильных ответов: <strong id="percentage" style="font-size: 1.5em;"></strong></p>
+                        <p style="margin: 5px 0 0 0; font-size: 1.1em;">Правильно: <strong id="correct-count"></strong> из <strong id="total-count"></strong></p>
+                    </div>
+                    <div id="detailed-results"></div>
+                </div>
+                <script>
+                    document.getElementById('test-form').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        const formData = new FormData(e.target);
+                        const answers = {};
+                        for (let [key, value] of formData.entries()) {
+                            const questionId = key.replace('q', '');
+                            answers[questionId] = value;
+                        }
+
+                        const testId = {{ test_id }};
+
+                        fetch('/api/test/submit', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                test_id: testId,
+                                answers: answers
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Отображаем общие результаты
+                                document.getElementById('percentage').textContent = data.percentage + '%';
+                                document.getElementById('correct-count').textContent = data.correct_count;
+                                document.getElementById('total-count').textContent = data.total_count;
+                                
+                                // Формируем детальные результаты
+                                const detailsContainer = document.getElementById('detailed-results');
+                                detailsContainer.innerHTML = ''; // Очищаем предыдущие результаты
+                                data.results.forEach(res => {
+                                    const resultBlock = document.createElement('div');
+                                    resultBlock.style.padding = '15px';
+                                    resultBlock.style.marginBottom = '10px';
+                                    resultBlock.style.borderRadius = '8px';
+                                    resultBlock.style.border = res.is_correct ? '2px solid #5cb85c' : '2px solid #d9534f';
+                                    resultBlock.style.background = res.is_correct ? '#f0fff0' : '#fff0f0';
+
+                                    resultBlock.innerHTML = `
+                                        <p style="font-weight: bold; margin: 0 0 5px 0;">Вопрос: ${res.question_text}</p>
+                                        <p style="margin: 0 0 5px 0;">Ваш ответ: ${res.student_answer}</p>
+                                        <p style="margin: 0;">Правильный ответ: ${res.correct_answer}</p>
+                                    `;
+                                    detailsContainer.appendChild(resultBlock);
+                                });
+
+                                // Показываем результаты и скрываем форму
+                                document.getElementById('test-form').style.display = 'none';
+                                document.getElementById('result-container').style.display = 'block';
+                            } else {
+                                alert('Ошибка: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Ошибка:', error);
+                            alert('Произошла ошибка при отправке результатов.');
+                        });
+                    });
+                </script>
+                {% endif %}
+            </section>
         </div>
-    </section>
+    </div>
 </div>
 </body>
 </html>
