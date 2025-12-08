@@ -546,6 +546,8 @@
         let allStudents = [];
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Страница учеников загружена');
+
             const menuItems = document.querySelectorAll('.menu-item');
             menuItems.forEach(function(item) {
                 const link = item.querySelector('a');
@@ -562,18 +564,24 @@
         });
 
         async function loadStudents() {
+            console.log('🔄 Загрузка учеников...');
             try {
                 const response = await fetch('/api/tutor/students');
                 const result = await response.json();
 
                 if (result.success) {
+                    console.log(`✅ Получено учеников: ${result.students.length}`);
+                    console.log('📋 Список учеников:', result.students);
+
                     allStudents = result.students;
                     filterStudents();
                     updateStats(allStudents);
                 } else {
+                    console.error('❌ Ошибка при загрузке учеников:', result.message);
                     showError('Ошибка при загрузке учеников');
                 }
             } catch (error) {
+                console.error('❌ Ошибка при загрузке учеников:', error);
                 showError('Ошибка при загрузке учеников');
             }
         }
@@ -671,14 +679,27 @@
         }
 
         function createStudentCard(student) {
-            const lessonCount = student.lesson_count || 8;
+            const lessonCount = student.lesson_count || 0;
             const avatarText = getAvatarText(student.first_name, student.last_name);
             const examClass = student.exam_type === 'oge' ? 'oge' : 'ege';
             const examLabel = student.exam_type === 'oge' ? 'ОГЭ' : 'ЕГЭ';
             const lessonPrice = student.lesson_price || 1500;
 
-            // Получаем информацию о расписании
-            const scheduleInfo = getScheduleInfo(student);
+            // Используем schedule_info который приходит из БД
+            const scheduleInfo = student.schedule_info || '';
+
+            // Форматируем расписание для отображения
+            let scheduleDisplay = 'Не указано';
+            if (scheduleInfo) {
+                // Разделяем расписание по запятым
+                const scheduleParts = scheduleInfo.split(', ');
+                if (scheduleParts.length > 0) {
+                    scheduleDisplay = scheduleParts[0]; // Показываем только первое занятие
+                    if (scheduleParts.length > 1) {
+                        scheduleDisplay += ` и еще ${scheduleParts.length - 1}`;
+                    }
+                }
+            }
 
             return `
                 <div class="student-card ${examClass}">
@@ -692,55 +713,15 @@
                     </div>
                     <div class="student-stats">
                         <div class="stat-item">
-                            <p class="stat-value">${lessonCount}</p>
-                            <p class="stat-label">Занятий проведено</p>
-                        </div>
-                        <div class="stat-item">
-                            <p class="stat-value" style="font-size: 1.2em;">${scheduleInfo.time}</p>
-                            <p class="stat-label">${scheduleInfo.day}</p>
+                            <p class="stat-value" style="font-size: 1.2em;">${scheduleDisplay}</p>
+                            <p class="stat-label">Расписание</p>
                         </div>
                     </div>
                     <div class="student-actions">
-                        <button class="btn-action btn-profile" onclick="viewProfile(${student.id})">👁️ Профиль</button>
-                        <button class="btn-action btn-edit" onclick="editStudent(${student.id})">✏️ Редакт.</button>
                         <button class="btn-action btn-delete" onclick="deleteStudent(${student.id}, '${student.first_name} ${student.last_name}')">🗑️ Удалить</button>
                     </div>
                 </div>
             `;
-        }
-
-        function getScheduleInfo(student) {
-            // Если у ученика есть информация о расписании в данных
-            if (student.day_of_week && student.lesson_time) {
-                const dayNames = {
-                    'monday': 'Понедельник',
-                    'tuesday': 'Вторник',
-                    'wednesday': 'Среда',
-                    'thursday': 'Четверг',
-                    'friday': 'Пятница',
-                    'saturday': 'Суббота'
-                };
-
-                const dayName = dayNames[student.day_of_week] || student.day_of_week;
-
-                // Форматируем время (убираем секунды если есть)
-                let timeDisplay = student.lesson_time;
-                if (student.lesson_time.includes(':')) {
-                    const timeParts = student.lesson_time.split(':');
-                    timeDisplay = `${timeParts[0]}:${timeParts[1]}`;
-                }
-
-                return {
-                    day: dayName,
-                    time: timeDisplay
-                };
-            }
-
-            // Если информации о расписании нет, показываем заглушку
-            return {
-                day: 'Расписание',
-                time: 'Не указано'
-            };
         }
 
         function updateStats(students) {
@@ -792,16 +773,17 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Ученик успешно удален');
+                    alert('✅ Ученик успешно удален');
                     loadStudents(); // Перезагружаем список
                 } else {
-                    alert('Ошибка при удалении ученика: ' + result.message);
+                    alert('❌ Ошибка при удалении ученика: ' + result.message);
                 }
             } catch (error) {
-                alert('Ошибка при удалении ученика');
+                alert('❌ Ошибка при удалении ученика');
             }
         }
 
+        // Автоматическое обновление каждые 30 секунд
         setInterval(loadStudents, 30000);
     </script>
 </body>

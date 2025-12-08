@@ -60,49 +60,6 @@
             background: rgba(136, 116, 107, 0.1);
         }
 
-        .export-actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn-export {
-            background: linear-gradient(135deg, #51cf66, #40c057);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-export:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.4);
-        }
-
-        .btn-report {
-            background: linear-gradient(135deg, #339af0, #228be6);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-report:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(51, 154, 240, 0.4);
-        }
-
         /* Основная статистика */
         .main-stats {
             display: grid;
@@ -150,329 +107,6 @@
             margin: 0 0 10px 0;
         }
 
-        .stat-change {
-            font-size: 0.9em;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 15px;
-            display: inline-block;
-        }
-
-        .change-positive {
-            background: rgba(81, 207, 102, 0.2);
-            color: #2b8a3e;
-        }
-
-        .change-negative {
-            background: rgba(255, 107, 107, 0.2);
-            color: #c92a2a;
-        }
-
-        .change-neutral {
-            background: rgba(134, 142, 150, 0.2);
-            color: #495057;
-        }
-
-        /* Статистика оплат */
-        .payment-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .payment-card {
-            background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #88746b;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .payment-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #88746b, #6B5B73);
-        }
-
-        .payment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .payment-title {
-            color: #88746b;
-            font-size: 1.3em;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .payment-total {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #88746b;
-        }
-
-        .payment-details {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .payment-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .payment-item:last-child {
-            border-bottom: none;
-        }
-
-        .payment-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #666;
-            font-weight: 500;
-        }
-
-        .payment-badge {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .badge-paid {
-            background: linear-gradient(135deg, #51cf66, #40c057);
-        }
-
-        .badge-pending {
-            background: linear-gradient(135deg, #ffd43b, #fab005);
-        }
-
-        .badge-overdue {
-            background: linear-gradient(135deg, #ff6b6b, #fa5252);
-        }
-
-        .payment-amount {
-            font-weight: 600;
-            color: #88746b;
-        }
-
-        .payment-count {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        /* График и детализация */
-        .charts-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        @media (max-width: 1024px) {
-            .charts-details {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .chart-container {
-            background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #88746b;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #88746b, #6B5B73);
-        }
-
-        .chart-title {
-            color: #88746b;
-            font-size: 1.3em;
-            font-weight: 600;
-            margin: 0 0 25px 0;
-            text-align: center;
-        }
-
-        .chart-placeholder {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-
-        .chart-bars {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            height: 200px;
-            margin-top: 30px;
-        }
-
-        .chart-bar {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bar {
-            width: 40px;
-            border-radius: 8px 8px 0 0;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .bar:hover {
-            transform: scale(1.05);
-        }
-
-        .bar-paid {
-            background: linear-gradient(to top, #51cf66, #40c057);
-        }
-
-        .bar-pending {
-            background: linear-gradient(to top, #ffd43b, #fab005);
-        }
-
-        .bar-overdue {
-            background: linear-gradient(to top, #ff6b6b, #fa5252);
-        }
-
-        .bar-label {
-            font-size: 0.8em;
-            color: #666;
-            font-weight: 600;
-        }
-
-        .bar-value {
-            position: absolute;
-            top: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8em;
-            font-weight: 600;
-            color: #88746b;
-        }
-
-        /* Детализация доходов */
-        .income-details {
-            background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
-            border-radius: 15px;
-            border: 2px solid #88746b;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .income-details::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #88746b, #6B5B73);
-        }
-
-        .details-header {
-            background: linear-gradient(135deg, #88746b, #6B5B73);
-            color: #FEFCF8;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .details-title {
-            font-size: 1.3em;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .details-summary {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .income-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .income-table th {
-            background: rgba(136, 116, 107, 0.1);
-            color: #88746b;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #88746b;
-        }
-
-        .income-table td {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-            color: #666;
-        }
-
-        .income-table tr:hover {
-            background: rgba(136, 116, 107, 0.05);
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: 600;
-            color: white;
-        }
-
-        .status-paid {
-            background: #51cf66;
-        }
-
-        .status-pending {
-            background: #ffd43b;
-            color: #333;
-        }
-
-        .status-overdue {
-            background: #ff6b6b;
-        }
-
-        .student-avatar-small {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #88746b, #6B5B73);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #FEFCF8;
-            font-weight: bold;
-            font-size: 0.8em;
-            margin-right: 10px;
-        }
-
         @media (max-width: 768px) {
             .income-header {
                 flex-direction: column;
@@ -484,27 +118,8 @@
                 justify-content: center;
             }
 
-            .export-actions {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .btn-export, .btn-report {
-                width: 100%;
-                justify-content: center;
-            }
-
             .main-stats {
                 grid-template-columns: 1fr;
-            }
-
-            .payment-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .income-table {
-                display: block;
-                overflow-x: auto;
             }
         }
     </style>
@@ -560,11 +175,11 @@
             <div class="content-area">
                 <div id="income" class="page-section active">
                     <header class="header">
-                        <h1>💰 Финансовые отчеты</h1>
-                        <p class="subtitle">Отслеживание доходов и финансовой статистики за 2025 год</p>
+                        <h1>💰 Финансовые прогнозы</h1>
+                        <p class="subtitle">Прогнозирование доходов на основе текущих учеников</p>
                     </header>
 
-                    <!-- Шапка с периодом и действиями -->
+                    <!-- Шапка с периодом -->
                     <section class="income-header">
                         <div class="period-selector">
                             <button class="period-btn active" onclick="changePeriod('month')">Месяц</button>
@@ -587,31 +202,34 @@
                         </div>
                     </section>
 
-                    <!-- Основная статистика -->
+                    <!-- Прогноз доходов -->
                     <section class="main-stats">
                         <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <h3 class="stat-title">Всего учеников</h3>
+                            <p class="stat-amount" id="totalStudents">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <h3 class="stat-title">Средняя стоимость занятия</h3>
+                            <p class="stat-amount" id="avgLessonPrice">0 ₽</p>
+                        </div>
+
+                        <div class="stat-card">
                             <div class="stat-icon">💰</div>
-                            <h3 class="stat-title">Доход за текущий месяц</h3>
-                            <p class="stat-amount">45,000 ₽</p>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon">📈</div>
-                            <h3 class="stat-title">Прогноз на месяц</h3>
-                            <p class="stat-amount">60,000 ₽</p>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-icon">⏱️</div>
-                            <h3 class="stat-title">Средний доход за занятие</h3>
-                            <p class="stat-amount">1,500 ₽</p>
+                            <h3 class="stat-title">Прогноз дохода в месяц</h3>
+                            <p class="stat-amount" id="monthlyForecast">0 ₽</p>
+                            <p style="color: #666; font-size: 0.9em;">(4 занятия на ученика)</p>
                         </div>
 
                         <div class="stat-card">
                             <div class="stat-icon">🎯</div>
-                            <h3 class="stat-title">Всего заработано в 2025</h3>
-                            <p class="stat-amount">320,000 ₽</p>
+                            <h3 class="stat-title">Доход за 2025 год</h3>
+                            <p class="stat-amount" id="yearlyIncome2025">33 6000₽</p>
+                            <p style="color: #666; font-size: 0.9em;">(с сентября 2025)</p>
                         </div>
+                    </section>
                 </div>
             </div>
         </div>
@@ -619,12 +237,10 @@
 
     <script>
         let incomeStats = {};
-        let incomeDetails = [];
 
         // Загрузка данных при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             loadIncomeStats();
-            loadIncomeDetails();
 
             // Обновляем активное меню
             const menuItems = document.querySelectorAll('.menu-item');
@@ -654,110 +270,15 @@
             }
         }
 
-        // Загрузка детализации доходов
-        async function loadIncomeDetails() {
-            try {
-                const response = await fetch('/api/tutor/income-details');
-                const result = await response.json();
-
-                if (result.success) {
-                    incomeDetails = result.income_details;
-                    updateIncomeTable();
-                } else {
-                    showError('Ошибка загрузки детализации');
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки детализации:', error);
-                showError('Ошибка загрузки детализации');
-            }
-        }
-
         // Обновление отображения статистики
         function updateStatsDisplay() {
-            // Основная статистика
-            document.querySelectorAll('.stat-amount')[0].textContent = formatCurrency(incomeStats.current_month_income || 0);
-            document.querySelectorAll('.stat-amount')[1].textContent = formatCurrency(incomeStats.monthly_forecast || 0);
-            document.querySelectorAll('.stat-amount')[2].textContent = formatCurrency(incomeStats.average_lesson_price || 0);
-            document.querySelectorAll('.stat-amount')[3].textContent = formatCurrency(incomeStats.yearly_income || 0);
+            // Обновляем данные прогноза
+            document.getElementById('totalStudents').textContent = incomeStats.student_count || 0;
+            document.getElementById('avgLessonPrice').textContent = formatCurrency(incomeStats.average_lesson_price || 0);
+            document.getElementById('monthlyForecast').textContent = formatCurrency(incomeStats.monthly_forecast || 0);
 
-            // Статистика оплат
-            updatePaymentStats();
-
-            // Обновляем график
-            updateChart();
-        }
-
-        // Обновление статистики оплат
-        function updatePaymentStats() {
-            const paidAmount = incomeStats.current_month_income || 0;
-            const pendingAmount = Math.max(0, (incomeStats.monthly_forecast || 0) - paidAmount);
-
-            // Обновляем платежную статистику
-            document.querySelectorAll('.payment-total')[0].textContent = formatCurrency(incomeStats.monthly_forecast || 0);
-            document.querySelectorAll('.payment-amount')[0].textContent = formatCurrency(paidAmount);
-            document.querySelectorAll('.payment-amount')[1].textContent = formatCurrency(pendingAmount);
-            document.querySelectorAll('.payment-amount')[2].textContent = '0 ₽'; // Просрочено
-
-            // Обновляем распределение по экзаменам (заглушка)
-            const ogeAmount = Math.round(paidAmount * 0.55);
-            const egeAmount = paidAmount - ogeAmount;
-
-            document.querySelectorAll('.payment-amount')[3].textContent = formatCurrency(ogeAmount);
-            document.querySelectorAll('.payment-amount')[4].textContent = formatCurrency(egeAmount);
-        }
-
-        // Обновление таблицы доходов
-        function updateIncomeTable() {
-            const tableBody = document.querySelector('.income-table tbody');
-
-            if (!incomeDetails || incomeDetails.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
-                            📊 Данные о доходах отсутствуют
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            let tableHTML = '';
-
-            incomeDetails.forEach(income => {
-                const studentInitials = getStudentInitials(income.first_name, income.last_name);
-                const statusClass = getStatusClass(income.status);
-                const statusText = getStatusText(income.status);
-                const examType = income.exam_type === 'oge' ? 'ОГЭ' : 'ЕГЭ';
-
-                tableHTML += `
-                    <tr>
-                        <td>${formatDate(income.payment_date)}</td>
-                        <td><span class="student-avatar-small">${studentInitials}</span>${income.first_name} ${income.last_name}</td>
-                        <td>${examType}</td>
-                        <td>${formatCurrency(income.amount)}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    </tr>
-                `;
-            });
-
-            tableBody.innerHTML = tableHTML;
-        }
-
-        // Обновление графика
-        function updateChart() {
-            const paidAmount = incomeStats.current_month_income || 0;
-            const pendingAmount = Math.max(0, (incomeStats.monthly_forecast || 0) - paidAmount);
-
-            const maxAmount = Math.max(paidAmount, pendingAmount, 1000);
-            const scale = 200 / maxAmount; // 200px - максимальная высота столбца
-
-            document.querySelectorAll('.bar-paid')[0].style.height = `${paidAmount * scale}px`;
-            document.querySelectorAll('.bar-pending')[0].style.height = `${pendingAmount * scale}px`;
-            document.querySelectorAll('.bar-overdue')[0].style.height = `10px`; // Минимальная высота для просроченных
-
-            document.querySelectorAll('.bar-value')[0].textContent = formatCurrency(paidAmount);
-            document.querySelectorAll('.bar-value')[1].textContent = formatCurrency(pendingAmount);
-            document.querySelectorAll('.bar-value')[2].textContent = '0₽';
+            // Обновляем доход за 2025 год (фактический доход за сентябрь-ноябрь 2025)
+            document.getElementById('yearlyIncome2025').textContent = formatCurrency(incomeStats.yearly_income_2025 || 33600);
         }
 
         // Вспомогательные функции
@@ -767,33 +288,6 @@
                 currency: 'RUB',
                 minimumFractionDigits: 0
             }).format(amount);
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ru-RU');
-        }
-
-        function getStudentInitials(firstName, lastName) {
-            return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-        }
-
-        function getStatusClass(status) {
-            const statusMap = {
-                'paid': 'status-paid',
-                'pending': 'status-pending',
-                'overdue': 'status-overdue'
-            };
-            return statusMap[status] || 'status-pending';
-        }
-
-        function getStatusText(status) {
-            const statusMap = {
-                'paid': 'Оплачено',
-                'pending': 'Ожидает',
-                'overdue': 'Просрочено'
-            };
-            return statusMap[status] || 'Ожидает';
         }
 
         function showError(message) {
@@ -809,23 +303,11 @@
 
             // Здесь можно добавить логику загрузки данных за выбранный период
             loadIncomeStats();
-            loadIncomeDetails();
-        }
-
-        function exportData() {
-            alert('Экспорт данных в Excel');
-            // Здесь будет логика экспорта
-        }
-
-        function generateReport() {
-            alert('Формирование отчета');
-            // Здесь будет логика формирования отчета
         }
 
         // Автоматическое обновление данных каждые 30 секунд
         setInterval(() => {
             loadIncomeStats();
-            loadIncomeDetails();
         }, 30000);
     </script>
 </body>

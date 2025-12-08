@@ -209,6 +209,36 @@
             border-left-color: #339af0;
         }
 
+        .lesson-card.completed {
+            opacity: 0.8;
+            border-left-color: #868e96;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .lesson-card.cancelled {
+            opacity: 0.6;
+            border-left-color: #ff6b6b;
+            background: linear-gradient(135deg, #fff5f5, #ffe3e3);
+        }
+
+        .lesson-card.completed .lesson-type {
+            background: #868e96;
+        }
+
+        .lesson-card.cancelled .lesson-type {
+            background: #ff6b6b;
+        }
+
+        .lesson-card.completed .lesson-topic {
+            color: #868e96;
+            text-decoration: line-through;
+        }
+
+        .lesson-card.cancelled .lesson-topic {
+            color: #ff6b6b;
+            text-decoration: line-through;
+        }
+
         .lesson-header {
             display: flex;
             justify-content: space-between;
@@ -264,6 +294,10 @@
             background: #339af0;
         }
 
+        .lesson-type.cancelled {
+            background: #ff6b6b;
+        }
+
         .lesson-details {
             margin-bottom: 15px;
         }
@@ -306,6 +340,22 @@
             box-shadow: 0 3px 10px rgba(81, 207, 102, 0.3);
         }
 
+        .btn-complete {
+            background: linear-gradient(135deg, #228be6, #1c7ed6);
+            color: white;
+        }
+
+        .btn-complete:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(34, 139, 230, 0.3);
+        }
+
+        .btn-complete:disabled {
+            background: #e9ecef;
+            color: #666;
+            cursor: not-allowed;
+        }
+
         .btn-edit {
             background: linear-gradient(135deg, #ffd43b, #fab005);
             color: white;
@@ -326,6 +376,12 @@
             box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
         }
 
+        .btn-cancel:disabled {
+            background: #e9ecef;
+            color: #666;
+            cursor: not-allowed;
+        }
+
         .empty-slot {
             text-align: center;
             color: #999;
@@ -344,7 +400,6 @@
             background: linear-gradient(135deg, #FEFCF8, #F5F0E8);
             padding: 25px;
             border-radius: 15px;
-            text-align: center;
             border: 2px solid #88746b;
             position: relative;
             overflow: hidden;
@@ -569,6 +624,42 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Стили для отмененных занятий */
+        .cancelled-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-active {
+            background: #51cf66;
+            color: white;
+        }
+
+        .status-completed {
+            background: #868e96;
+            color: white;
+        }
+
+        .status-cancelled {
+            background: #ff6b6b;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -633,7 +724,6 @@
                             <button class="nav-btn nav-right" onclick="nextDay()">▶</button>
                         </div>
                         <div class="schedule-actions">
-                            <button class="btn-primary" onclick="addLesson()">➕ Добавить занятие</button>
                             <button class="btn-outline" onclick="openCalendar()">📅 Выбрать дату</button>
                         </div>
                     </section>
@@ -690,16 +780,20 @@
         </div>
     </div>
 
-<script src="/timetable.js"></script>
 <script>
     let currentView = 'day';
     let selectedDay = 'monday';
-    let currentDate = new Date();
     let studentsData = [];
     let scheduleData = [];
 
     // Загрузка данных при старте
     document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем, существует ли уже переменная currentDate из timetable.js
+        if (typeof window.currentDate === 'undefined') {
+            // Если нет, создаем ее
+            window.currentDate = new Date();
+        }
+
         loadStudents();
         loadScheduleForCurrentDate();
         updateDateDisplay();
@@ -714,11 +808,13 @@
         dateInput.type = 'date';
         dateInput.style.display = 'none';
         dateInput.id = 'datePicker';
-        dateInput.value = currentDate.toISOString().split('T')[0];
+        dateInput.value = window.currentDate.toISOString().split('T')[0];
         document.body.appendChild(dateInput);
 
         dateInput.addEventListener('change', function(e) {
-            currentDate = new Date(e.target.value);
+            // Обновляем currentDate из выбранной даты
+            const selectedDate = new Date(e.target.value);
+            window.currentDate = selectedDate;
             updateDateDisplay();
             loadScheduleForCurrentDate();
         });
@@ -742,29 +838,53 @@
     // Загрузка расписания на текущую дату
     async function loadScheduleForCurrentDate() {
         try {
-            const dateStr = currentDate.toISOString().split('T')[0];
+            const dateStr = window.currentDate.toISOString().split('T')[0];
             const response = await fetch(`/api/tutor/schedule/date/${dateStr}`);
             const result = await response.json();
 
             if (result.success) {
-                scheduleData = result.schedule;
-                updateStatistics(result.stats);
+                scheduleData = result.schedule || [];
+
+                // Всегда обновляем статистику - либо из ответа, либо рассчитываем
+                if (result.stats) {
+                    updateStatistics(result.stats);
+                } else {
+                    updateStatistics(calculateStatsFromSchedule());
+                }
+
                 renderSchedule();
             } else {
                 console.error('Ошибка загрузки расписания:', result.message);
                 scheduleData = [];
+                updateStatistics({
+                    lessons_count: 0,
+                    oge_count: 0,
+                    ege_count: 0,
+                    total_hours: 0,
+                    income_forecast: 0
+                });
                 renderSchedule();
             }
         } catch (error) {
             console.error('Ошибка загрузки расписания:', error);
             scheduleData = [];
+            updateStatistics({
+                lessons_count: 0,
+                oge_count: 0,
+                ege_count: 0,
+                total_hours: 0,
+                income_forecast: 0
+            });
             renderSchedule();
         }
     }
 
     // Обновление статистики
     function updateStatistics(stats) {
-        if (!stats) return;
+        // Если stats не передан, используем данные из расписания
+        if (!stats) {
+            stats = calculateStatsFromSchedule();
+        }
 
         document.getElementById('lessonsCount').textContent = stats.lessons_count || 0;
         document.getElementById('lessonsBreakdown').textContent = `${stats.oge_count || 0} ОГЭ + ${stats.ege_count || 0} ЕГЭ`;
@@ -772,11 +892,47 @@
         document.getElementById('incomeForecast').textContent = `${(stats.income_forecast || 0).toLocaleString()}₽`;
     }
 
+    // Расчет статистики из данных расписания
+    function calculateStatsFromSchedule() {
+        const stats = {
+            lessons_count: 0,
+            oge_count: 0,
+            ege_count: 0,
+            total_hours: 0,
+            income_forecast: 0
+        };
+
+        if (!scheduleData || scheduleData.length === 0) {
+            return stats;
+        }
+
+        // Подсчитываем статистику только для активных занятий
+        scheduleData.forEach(lesson => {
+            if (lesson.status === 'active') {
+                stats.lessons_count++;
+                stats.total_hours++; // Каждое занятие = 1 час
+
+                // Считаем по типам экзаменов
+                if (lesson.exam_type === 'oge') {
+                    stats.oge_count++;
+                } else if (lesson.exam_type === 'ege') {
+                    stats.ege_count++;
+                }
+
+                // Суммируем стоимость занятий
+                stats.income_forecast += lesson.lesson_price || 0;
+            }
+        });
+
+        console.log('📊 Рассчитанная статистика:', stats);
+        return stats;
+    }
+
     // Обновление отображения даты
     function updateDateDisplay() {
         const dateElement = document.getElementById('currentPeriod');
         if (currentView === 'day') {
-            dateElement.textContent = currentDate.toLocaleDateString('ru-RU', {
+            dateElement.textContent = window.currentDate.toLocaleDateString('ru-RU', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -820,13 +976,13 @@
 
     // Навигация по дням
     function previousDay() {
-        currentDate.setDate(currentDate.getDate() - 1);
+        window.currentDate.setDate(window.currentDate.getDate() - 1);
         updateDateDisplay();
         loadScheduleForCurrentDate();
     }
 
     function nextDay() {
-        currentDate.setDate(currentDate.getDate() + 1);
+        window.currentDate.setDate(window.currentDate.getDate() + 1);
         updateDateDisplay();
         loadScheduleForCurrentDate();
     }
@@ -838,6 +994,8 @@
 
     // Отрисовка расписания
     function renderSchedule() {
+        console.log('📅 Данные расписания для отрисовки:', scheduleData);
+        console.log('📊 Текущая дата:', window.currentDate.toLocaleDateString());
         const scheduleBody = document.getElementById('schedule-body');
 
         if (!scheduleData || scheduleData.length === 0) {
@@ -891,20 +1049,42 @@
         const examLabel = student ? (student.exam_type === 'oge' ? 'ОГЭ' : 'ЕГЭ') : 'ЕГЭ';
         const avatarText = getAvatarText(lesson.first_name, lesson.last_name);
 
+        // Определяем статус занятия
+        const isCompleted = lesson.status === 'completed';
+        const isCancelled = lesson.status === 'cancelled';
+        const completeBtnText = isCompleted ? '✅ Завершено' : '✓ Завершить';
+        const lessonClass = `${examClass} ${isCompleted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`;
+
+        // Определяем текст статуса
+        let statusText = '';
+        let statusClass = '';
+        if (isCompleted) {
+            statusText = 'Завершено';
+            statusClass = 'status-completed';
+        } else if (isCancelled) {
+            statusText = 'Отменено';
+            statusClass = 'status-cancelled';
+        } else {
+            statusText = 'Активно';
+            statusClass = 'status-active';
+        }
+
         return `
             <tr>
                 <td class="time-slot">${startTime} - ${endTime}</td>
                 <td>
-                    <div class="lesson-card ${examClass}">
+                    <div class="lesson-card ${lessonClass}">
                         <div class="lesson-header">
                             <div class="student-info">
                                 <div class="student-avatar">${avatarText}</div>
                                 <div class="student-details">
                                     <h4>${lesson.first_name} ${lesson.last_name}</h4>
-                                    <p>${examLabel} • ${student ? student.lesson_price + '₽' : ''}</p>
+                                    <p>${examLabel} • ${student ? student.lesson_price + '₽' : ''}
+                                       <span class="status-badge ${statusClass}">${statusText}</span>
+                                    </p>
                                 </div>
                             </div>
-                            <span class="lesson-type ${examClass}">${examLabel}</span>
+                            <span class="lesson-type ${isCancelled ? 'cancelled' : examClass}">${examLabel}</span>
                         </div>
                         <div class="lesson-details">
                             <div class="lesson-topic">${lesson.topic_title || 'Индивидуальное занятие'}</div>
@@ -914,9 +1094,16 @@
                 </td>
                 <td>
                     <div class="lesson-actions">
-                        <button class="btn-small btn-start" onclick="startLesson(${lesson.id})">▶ Начать</button>
-                        <button class="btn-small btn-edit" onclick="editLesson(${lesson.id})">✏️</button>
-                        <button class="btn-small btn-cancel" onclick="cancelLesson(${lesson.id})">❌</button>
+                        ${!isCancelled ? `
+                            <button class="btn-small btn-complete"
+                                    onclick="completeLesson(${lesson.id})"
+                                    ${isCompleted ? 'disabled' : ''}>
+                                ${completeBtnText}
+                            </button>
+                        ` : ''}
+                        <button class="btn-small btn-cancel" onclick="cancelLesson(${lesson.id})" ${isCancelled ? 'disabled' : ''}>
+                            ${isCancelled ? '❌ Отменено' : '❌ Отменить'}
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -1035,7 +1222,7 @@
                 0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday',
                 4: 'thursday', 5: 'friday', 6: 'saturday'
             };
-            const today = dayMap[currentDate.getDay()];
+            const today = dayMap[window.currentDate.getDay()];
             document.getElementById('lessonDay').value = today;
         }
     }
@@ -1045,8 +1232,16 @@
         e.preventDefault();
 
         const formData = new FormData(e.target);
+        const studentId = formData.get('student_id');
+
+        // Проверяем, что выбран ученик
+        if (!studentId) {
+            alert('❌ Пожалуйста, выберите ученика');
+            return;
+        }
+
         const data = {
-            student_id: formData.get('student_id'),
+            student_id: studentId,
             day_of_week: formData.get('day_of_week'),
             start_time: formData.get('start_time'),
             end_time: formData.get('end_time')
@@ -1063,6 +1258,8 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '⏳ Добавление...';
 
+            console.log('📤 Отправка данных для создания занятия:', data);
+
             const response = await fetch('/api/tutor/schedule/create', {
                 method: 'POST',
                 headers: {
@@ -1074,7 +1271,7 @@
             const result = await response.json();
 
             if (result.success) {
-                alert('✅ Занятие успешно добавлено!');
+                alert('✅ Занятие успешно добавлено в расписание!');
                 document.querySelector('.modal-overlay').remove();
                 loadScheduleForCurrentDate();
             } else {
@@ -1086,6 +1283,88 @@
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '➕ Добавить занятие';
+        }
+    }
+
+    // Завершение занятия и начисление дохода
+    async function completeLesson(scheduleId) {
+        if (!confirm('Завершить занятие и начислить доход?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/tutor/complete-lesson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    schedule_id: scheduleId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert(result.message);
+                // Обновляем расписание и статистику доходов
+                loadScheduleForCurrentDate();
+                updateIncomeStats();
+            } else {
+                alert('❌ ' + result.message);
+            }
+        } catch (error) {
+            console.error('Ошибка завершения занятия:', error);
+            alert('❌ Ошибка при завершении занятия');
+        }
+    }
+
+    // Отмена занятия
+    async function cancelLesson(scheduleId) {
+        if (!confirm('Вы уверены, что хотите отменить это занятие?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/tutor/cancel-lesson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    schedule_id: scheduleId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ Занятие успешно отменено!');
+                // Обновляем расписание
+                loadScheduleForCurrentDate();
+            } else {
+                alert('❌ Ошибка: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Ошибка отмены занятия:', error);
+            alert('❌ Ошибка при отмене занятия');
+        }
+    }
+
+    // Функция для обновления статистики доходов
+    async function updateIncomeStats() {
+        try {
+            const response = await fetch('/api/tutor/income-stats');
+            const result = await response.json();
+
+            if (result.success) {
+                // Обновляем данные на странице доходов
+                if (window.updateStatsDisplay) {
+                    window.updateStatsDisplay();
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка обновления статистики:', error);
         }
     }
 
@@ -1127,13 +1406,6 @@
     function editLesson(lessonId) {
         alert(`Редактирование занятия #${lessonId}`);
         // Здесь будет логика редактирования занятия
-    }
-
-    function cancelLesson(lessonId) {
-        if (confirm('Вы уверены, что хотите отменить занятие?')) {
-            alert(`Занятие #${lessonId} отменено`);
-            // Здесь будет логика отмены занятия
-        }
     }
 
     // Отрисовка расписания на неделю

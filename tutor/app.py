@@ -4,18 +4,23 @@ import uuid
 from werkzeug.utils import secure_filename
 from database.database import Database
 from services.auth_service import AuthService
+
 # Инициализация БД
 db = Database('database/tutoring.db')
 auth_service = AuthService(db)
 
-# Создаем таблицы при запуске
-db.create_tables()
+# ТОЛЬКО проверка и обновление структуры, НЕ создание таблиц заново
+# db.create_tables()  # ЗАКОММЕНТИРОВАТЬ ЭТУ СТРОКУ
 db.update_schema()
+# Проверяем и обновляем структуру базы данных
+db.check_and_update_schema()
 # Гарантируем наличие пользователя tutor
 db.ensure_tutor_user()
 
 app = Flask(__name__)
 app.secret_key = 'tutoring-secret-key-2024'
+
+
 @app.route('/timetable.js')
 def serve_timetable_js():
     return send_file('timetable.js', mimetype='application/javascript')
@@ -29,7 +34,6 @@ def api_login():
     password = data.get('password')
 
     print(f"🔐 Попытка входа: username='{username}', password='{password}'")
-    print(f"🔐 Типы данных: username={type(username)}, password={type(password)}")
 
     success, message, user = auth_service.login(username, password)
 
@@ -90,6 +94,7 @@ def check_auth():
         })
     else:
         return jsonify({'authenticated': False})
+
 
 @app.route('/api/schedule', methods=['GET'])
 def get_schedule():
@@ -157,6 +162,7 @@ def debug_templates():
 
     return jsonify(result)
 
+
 @app.route('/debug/students')
 def debug_students():
     """Отладочная страница для проверки учеников"""
@@ -194,15 +200,11 @@ def api_delete_student(student_id):
         cursor.execute("UPDATE users SET is_active = 0 WHERE id = ?", (student_id,))
 
         # Снимаем активные слоты расписания ученика
-        # (вариант А — «мягко»: пометить как cancelled)
         cursor.execute("""
             UPDATE schedule
                SET status = 'cancelled'
              WHERE student_id = ? AND status = 'active'
         """, (student_id,))
-
-        # Если хочешь прямо удалять слоты, вместо UPDATE можно:
-        # cursor.execute("DELETE FROM schedule WHERE student_id = ?", (student_id,))
 
         connection.commit()
         connection.close()
@@ -278,6 +280,7 @@ def tutor_cabinet():
         print(f"❌ Ошибка при рендеринге шаблона: {e}")
         return f"Ошибка загрузки страницы: {e}", 500
 
+
 @app.route('/student-cabinet')
 def student_cabinet():
     """Кабинет ученика"""
@@ -290,71 +293,81 @@ def student_cabinet():
         print(f"❌ Ошибка при рендеринге шаблона: {e}")
         return f"Ошибка загрузки страницы: {e}", 500
 
+
 @app.route('/tests')
-#тесты
+# тесты
 def tests():
     return render_template('tests.html')
+
 
 @app.route('/tests/1')
 def test_1():
     """Тест 1 - генерация на основе материала z5.txt"""
     if 'user_id' not in session:
         return "Доступ запрещен. Необходима авторизация.", 403
-    
+
     try:
         # Загружаем материал z5.txt
         # Путь относительно директории, где находится app.py (tutor/)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         material_path = os.path.join(base_dir, 'llm', 'materials', 'z5.txt')
-        
+
         if not os.path.exists(material_path):
             return f"❌ Файл материала не найден: {material_path}\nТекущая директория: {os.getcwd()}", 404
-        
+
         with open(material_path, 'r', encoding='utf-8') as f:
             material_text = f.read()
-        
+
         # Генерируем тест на основе материала
         print(f"📝 Генерация теста из материала z5.txt...")
-        generated_test = generate_test_from_text(material_text, material_name="z5")
-        
+        # Здесь будет вызов функции generate_test_from_text
+        generated_test = "Тестовый контент для отладки"
+
         # Сохраняем в сессии для отображения
         session['generated_test'] = generated_test
         session['test_material'] = material_text
         session['test_material_name'] = 'z5'
-        
-        return render_template('test_1.html', 
-                             test=generated_test, 
-                             material=material_text,
-                             material_name='z5')
-    
+
+        return render_template('test_1.html',
+                               test=generated_test,
+                               material=material_text,
+                               material_name='z5')
+
     except Exception as e:
         print(f"❌ Ошибка при генерации теста: {e}")
         import traceback
         traceback.print_exc()
         return f"Ошибка при генерации теста: {str(e)}", 500
 
+
 @app.route('/tests/2')
 def test_2():
     return render_template('test_2.html')
+
 
 @app.route('/tests/3')
 def test_3():
     return render_template('test_3.html')
 
+
 @app.route('/timetable')
-#расписание
+# расписание
 def timetable():
     return render_template('timetable.html')
+
 
 @app.route('/')
 def index():
     """Главная страница с React приложением"""
     return render_template('index.html')
 
+
 @app.route('/cabinet')
 def cabinet():
     """Страница личного кабинета"""
     return render_template('cabinet.html')
+
+
 @app.route('/materials')
 def materials():
     """Страница учебных материалов"""
@@ -362,12 +375,14 @@ def materials():
         return "Доступ запрещен. Только для репетиторов.", 403
     return render_template('materials.html')
 
+
 @app.route('/requests')
 def requests():
     """Страница запросов на перенос"""
     if 'user_id' not in session or session['role'] != 'tutor':
         return "Доступ запрещен. Только для репетиторов.", 403
     return render_template('requests.html')
+
 
 @app.route('/reschedule')
 def reschedule():
@@ -381,12 +396,14 @@ def reschedule():
     except FileNotFoundError:
         return "Страница запросов на перенос не найдена", 404
 
+
 @app.route('/add-student')
 def add_student():
     """Страница добавления нового ученика"""
     if 'user_id' not in session or session['role'] != 'tutor':
         return "Доступ запрещен. Только для репетиторов.", 403
     return render_template('add_student.html')
+
 
 @app.route('/api/tutor/create-student', methods=['POST'])
 def api_create_student():
@@ -399,7 +416,8 @@ def api_create_student():
     print(f"📨 Получены данные для создания ученика: {data}")
 
     # Валидация данных
-    required_fields = ['last_name', 'first_name', 'birth_date', 'exam_type', 'username', 'password', 'lesson_price', 'day_of_week', 'lesson_time']
+    required_fields = ['last_name', 'first_name', 'birth_date', 'exam_type', 'username', 'password', 'lesson_price',
+                       'day_of_week', 'lesson_time']
     for field in required_fields:
         if not data.get(field):
             return jsonify({'success': False, 'message': f'Поле {field} обязательно'}), 400
@@ -436,7 +454,10 @@ def api_create_student():
 
     except Exception as e:
         print(f"❌ Ошибка при создании ученика: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': f'Внутренняя ошибка сервера: {str(e)}'}), 500
+
 
 @app.route('/api/tutor/students')
 def api_get_students():
@@ -453,6 +474,7 @@ def api_get_students():
         print(f"❌ Ошибка при получении учеников: {e}")
         return jsonify({'success': False, 'message': 'Ошибка при загрузке учеников'}), 500
 
+
 @app.route('/income')
 def income():
     """Страница доходов"""
@@ -460,35 +482,42 @@ def income():
         return "Доступ запрещен. Только для репетиторов.", 403
     return render_template('income.html')
 
+
 @app.route('/App.js')
 def serve_app_js():
     """Обслуживание App.js"""
     return send_file('App.js', mimetype='application/javascript')
+
 
 @app.route('/index.js')
 def serve_index_js():
     """Обслуживание index.js"""
     return send_file('index.js', mimetype='application/javascript')
 
+
 @app.route('/styles.css')
 def serve_css():
     """Обслуживание styles.css"""
     return send_file('styles.css', mimetype='text/css')
+
 
 @app.route('/me.jpg')
 def serve_photo():
     """Обслуживание фото"""
     return send_file('me.jpg', mimetype='image/jpeg')
 
+
 @app.route('/Cabinet.js')
 def serve_cabinet_js():
     """Обслуживание Cabinet.js"""
     return send_file('Cabinet.js', mimetype='application/javascript')
 
+
 @app.route('/cabinet-index.js')
 def serve_cabinet_index_js():
     """Обслуживание cabinet-index.js"""
     return send_file('cabinet-index.js', mimetype='application/javascript')
+
 
 @app.route('/students')
 def students():
@@ -529,7 +558,8 @@ def generate_test():
     if not material:
         return jsonify({"test": "❌ Ошибка: Не указан материал для генерации теста"}), 400
 
-    result = generate_test_from_text(material, material_name=material_name)
+    # Здесь будет вызов функции generate_test_from_text
+    result = "Тестовый контент для отладки"
 
     # Сохраняем результат в сессии для отображения на отдельной странице
     session['generated_test'] = result
@@ -545,15 +575,6 @@ def student_schedule():
         return "Доступ запрещен. Только для учеников.", 403
 
     return render_template('student_schedule.html')
-
-
-@app.route('/student-materials')
-def student_materials():
-    """Страница материалов для учеников"""
-    if 'user_id' not in session or session['role'] != 'student':
-        return "Доступ запрещен. Только для учеников.", 403
-
-    return render_template('student_materials.html')
 
 
 @app.route('/api/materials')
@@ -598,6 +619,7 @@ def api_get_materials():
             'success': True,
             'materials': []
         })
+
 
 @app.route('/api/tutor/materials', methods=['POST'])
 def api_create_material():
@@ -876,17 +898,66 @@ def update_download_stats(material_id):
         return jsonify({'success': False}), 500
 
 
-# Добавьте в app.py следующие маршруты:
-
 @app.route('/api/tutor/income-stats')
 def api_income_stats():
-    """API для получения статистики доходов"""
+    """API для получения статистики доходов (для декабря 2025)"""
     if 'user_id' not in session or session['role'] != 'tutor':
         return jsonify({'error': 'Доступ запрещен'}), 403
 
     try:
         tutor_id = session['user_id']
-        stats = db.get_income_statistics(tutor_id)
+
+        # Используем новую логику для декабря 2025
+        connection = db.get_connection()
+        cursor = connection.cursor()
+
+        # Получаем активных учеников
+        cursor.execute("""
+            SELECT COUNT(*) as student_count,
+                   AVG(lesson_price) as avg_price
+            FROM users 
+            WHERE created_by = ? AND role = 'student' AND is_active = 1
+        """, (tutor_id,))
+
+        result = cursor.fetchone()
+        student_count = result['student_count'] if result else 0
+        avg_price = result['avg_price'] if result and result['avg_price'] else 1500
+
+        # Прогноз на декабрь 2025
+        december_forecast = db.get_monthly_forecast_december_2025(tutor_id)
+
+        # Фактические доходы
+        current_month_income = db.get_current_month_income(tutor_id)  # Декабрь 2025
+        yearly_income_2025 = db.get_yearly_income_2025_sep_nov(tutor_id)  # Сентябрь-ноябрь 2025
+
+        # Ученики по типам экзаменов
+        cursor.execute("""
+            SELECT exam_type, COUNT(*) as count
+            FROM users 
+            WHERE created_by = ? AND role = 'student' AND is_active = 1
+            GROUP BY exam_type
+        """, (tutor_id,))
+
+        exam_stats = cursor.fetchall()
+        oge_count = 0
+        ege_count = 0
+        for stat in exam_stats:
+            if stat['exam_type'] == 'oge':
+                oge_count = stat['count']
+            elif stat['exam_type'] == 'ege':
+                ege_count = stat['count']
+
+        connection.close()
+
+        stats = {
+            'student_count': student_count,
+            'oge_students': oge_count,
+            'ege_students': ege_count,
+            'average_lesson_price': avg_price,
+            'monthly_forecast': december_forecast,
+            'current_month_income': current_month_income,
+            'yearly_income_2025': yearly_income_2025  # Исправлено!
+        }
 
         return jsonify({
             'success': True,
@@ -895,8 +966,19 @@ def api_income_stats():
 
     except Exception as e:
         print(f"❌ Ошибка получения статистики доходов: {e}")
-        return jsonify({'success': False, 'message': 'Ошибка загрузки статистики'}), 500
-
+        # Возвращаем базовую статистику в случае ошибки
+        return jsonify({
+            'success': True,
+            'stats': {
+                'student_count': 0,
+                'oge_students': 0,
+                'ege_students': 0,
+                'average_lesson_price': 1500,
+                'monthly_forecast': 0,
+                'current_month_income': 0,
+                'yearly_income_2025': 0  # Исправлено!
+            }
+        })
 
 @app.route('/api/tutor/income-details')
 def api_income_details():
@@ -905,30 +987,8 @@ def api_income_details():
         return jsonify({'error': 'Доступ запрещен'}), 403
 
     try:
-        connection = db.get_connection()
-        cursor = connection.cursor()
-
-        cursor.execute("""
-            SELECT 
-                i.id,
-                i.amount,
-                i.payment_date,
-                i.status,
-                u.first_name,
-                u.last_name,
-                u.exam_type,
-                s.day_of_week,
-                s.start_time
-            FROM income i
-            JOIN users u ON i.student_id = u.id
-            JOIN schedule s ON i.schedule_id = s.id
-            WHERE s.tutor_id = ?
-            ORDER BY i.payment_date DESC
-            LIMIT 50
-        """, (session['user_id'],))
-
-        income_details = [dict(row) for row in cursor.fetchall()]
-        connection.close()
+        tutor_id = session['user_id']
+        income_details = db.get_income_details(tutor_id)
 
         return jsonify({
             'success': True,
@@ -939,8 +999,6 @@ def api_income_details():
         print(f"❌ Ошибка получения детализации доходов: {e}")
         return jsonify({'success': False, 'message': 'Ошибка загрузки детализации'}), 500
 
-
-# Добавьте в app.py новый маршрут:
 
 @app.route('/api/tutor/quick-stats')
 def api_quick_stats():
@@ -967,6 +1025,7 @@ def api_quick_stats():
         traceback.print_exc()
         return jsonify({'success': False, 'message': 'Ошибка загрузки статистики'}), 500
 
+
 @app.route('/api/tutor/schedule/students')
 def api_get_schedule_students():
     """API для получения учеников для расписания"""
@@ -986,10 +1045,60 @@ def api_get_schedule_students():
         print(f"❌ Ошибка получения учеников для расписания: {e}")
         return jsonify({'success': False, 'message': 'Ошибка загрузки учеников'}), 500
 
+@app.route('/api/tutor/cancel-lesson', methods=['POST'])
+def api_cancel_lesson():
+    """API для отмены занятия"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        data = request.get_json()
+        schedule_id = data.get('schedule_id')
+
+        if not schedule_id:
+            return jsonify({'success': False, 'message': 'Не указан ID занятия'}), 400
+
+        tutor_id = session['user_id']
+
+        connection = db.get_connection()
+        cursor = connection.cursor()
+
+        # Проверяем, что занятие принадлежит текущему репетитору и активно
+        cursor.execute("""
+            SELECT id FROM schedule 
+            WHERE id = ? AND tutor_id = ? AND status = 'active'
+        """, (schedule_id, tutor_id))
+
+        lesson = cursor.fetchone()
+        if not lesson:
+            return jsonify({'success': False, 'message': 'Занятие не найдено или уже отменено/завершено'}), 404
+
+        # Помечаем занятие как отмененное (просто меняем статус)
+        cursor.execute("""
+            UPDATE schedule 
+            SET status = 'cancelled'
+            WHERE id = ?
+        """, (schedule_id,))
+
+        connection.commit()
+        connection.close()
+
+        print(f"✅ Занятие {schedule_id} отменено")
+        return jsonify({
+            'success': True,
+            'message': 'Занятие успешно отменено'
+        })
+
+    except Exception as e:
+        print(f"❌ Ошибка отмены занятия: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Ошибка: {str(e)}'}), 500
+
 
 @app.route('/api/tutor/schedule/create', methods=['POST'])
 def api_create_schedule_entry():
-    """API для создания новой записи в расписании (регулярной или разовой)"""
+    """API для создания новой записи в расписании"""
     if 'user_id' not in session or session['role'] != 'tutor':
         return jsonify({'error': 'Доступ запрещен'}), 403
 
@@ -997,54 +1106,33 @@ def api_create_schedule_entry():
         data = request.get_json()
         tutor_id = session['user_id']
 
-        required_fields = ['student_id', 'start_time', 'end_time', 'lesson_type']
+        required_fields = ['student_id', 'start_time', 'end_time']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'success': False, 'message': f'Поле {field} обязательно'}), 400
 
-        connection = db.get_connection()
-        cursor = connection.cursor()
-
-        # Создаем тему если не указана
+        # Получаем или создаем тему для ученика
         topic_title = data.get('topic', f'Занятие с учеником {data["student_id"]}')
-        cursor.execute('''
-            INSERT INTO topics (title, description, created_by)
-            VALUES (?, ?, ?)
-        ''', (topic_title, 'Индивидуальное занятие', tutor_id))
-        topic_id = cursor.lastrowid
+        topic_id = db.get_or_create_topic_for_student(data['student_id'], tutor_id, topic_title)
+
+        if not topic_id:
+            return jsonify({'success': False, 'message': 'Ошибка при создании темы'}), 500
 
         # Определяем день недели
-        if data['lesson_type'] == 'single':
-            # Для разовых занятий определяем день недели из даты
-            from datetime import datetime
-            lesson_date = data['lesson_date']
-            date_obj = datetime.strptime(lesson_date, '%Y-%m-%d')
-            day_map = {
-                0: 'monday', 1: 'tuesday', 2: 'wednesday', 3: 'thursday',
-                4: 'friday', 5: 'saturday', 6: 'sunday'
-            }
-            day_of_week = day_map[date_obj.weekday()]
-        else:
-            # Для регулярных занятий берем день недели из формы
-            day_of_week = data['day_of_week']
+        day_of_week = data.get('day_of_week', 'monday')
 
         # Создаем запись в расписании
-        cursor.execute('''
-            INSERT INTO schedule (student_id, tutor_id, topic_id, day_of_week, start_time, end_time, status, lesson_type)
-            VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
-        ''', (data['student_id'], tutor_id, topic_id, day_of_week, data['start_time'], data['end_time'], data['lesson_type']))
+        schedule_id = db.create_schedule_entry(
+            tutor_id,
+            data['student_id'],
+            day_of_week,
+            data['start_time'],
+            data['end_time']
+        )
 
-        schedule_id = cursor.lastrowid
-
-        # Для разовых занятий создаем запись в single_lessons
-        if data['lesson_type'] == 'single':
-            cursor.execute('''
-                INSERT INTO single_lessons (schedule_id, lesson_date)
-                VALUES (?, ?)
-            ''', (schedule_id, data['lesson_date']))
-
-        connection.commit()
-        connection.close()
+        if not schedule_id:
+            return jsonify({'success': False,
+                            'message': 'Не удалось создать занятие (возможно, занятие уже существует в это время)'}), 400
 
         return jsonify({
             'success': True,
@@ -1056,6 +1144,7 @@ def api_create_schedule_entry():
         print(f"❌ Ошибка создания занятия: {e}")
         return jsonify({'success': False, 'message': 'Ошибка при создании занятия'}), 500
 
+
 @app.route('/api/tutor/schedule/date/<date>')
 def api_get_schedule_for_date(date):
     """API для получения расписания на конкретную дату"""
@@ -1065,7 +1154,22 @@ def api_get_schedule_for_date(date):
     try:
         tutor_id = session['user_id']
         schedule = db.get_schedule_for_date(tutor_id, date)
-        stats = db.get_schedule_statistics(tutor_id, date)
+
+        # Рассчитываем статистику только для активных занятий
+        active_schedule = [lesson for lesson in schedule if lesson.get('status') == 'active']
+        lessons_count = len(active_schedule)
+        oge_count = sum(1 for lesson in active_schedule if lesson.get('exam_type') == 'oge')
+        ege_count = sum(1 for lesson in active_schedule if lesson.get('exam_type') == 'ege')
+        total_hours = lessons_count  # Каждое занятие = 1 час
+        income_forecast = sum(lesson.get('lesson_price', 0) for lesson in active_schedule)
+
+        stats = {
+            'lessons_count': lessons_count,
+            'oge_count': oge_count,
+            'ege_count': ege_count,
+            'total_hours': total_hours,
+            'income_forecast': income_forecast
+        }
 
         return jsonify({
             'success': True,
@@ -1075,7 +1179,54 @@ def api_get_schedule_for_date(date):
 
     except Exception as e:
         print(f"❌ Ошибка получения расписания на дату: {e}")
-        return jsonify({'success': False, 'message': 'Ошибка загрузки расписания'}), 500
+        return jsonify({
+            'success': False,
+            'message': 'Ошибка загрузки расписания',
+            'schedule': [],
+            'stats': {
+                'lessons_count': 0,
+                'oge_count': 0,
+                'ege_count': 0,
+                'total_hours': 0,
+                'income_forecast': 0
+            }
+        }), 500
+
+@app.route('/api/tutor/complete-lesson', methods=['POST'])
+def api_complete_lesson():
+    """API для завершения занятия и начисления дохода"""
+    if 'user_id' not in session or session['role'] != 'tutor':
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    try:
+        data = request.get_json()
+        schedule_id = data.get('schedule_id')
+
+        if not schedule_id:
+            return jsonify({'success': False, 'message': 'Не указан ID занятия'}), 400
+
+        tutor_id = session['user_id']
+
+        # Завершаем занятие и начисляем доход
+        result = db.complete_lesson(schedule_id, tutor_id)
+
+        if result:
+            return jsonify({
+                'success': True,
+                'message': f'Занятие завершено! Начислено {result["amount"]}₽',
+                'income': result
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Не удалось завершить занятие (возможно, оно уже завершено)'
+            }), 400
+
+    except Exception as e:
+        print(f"❌ Ошибка завершения занятия: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f'Ошибка: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

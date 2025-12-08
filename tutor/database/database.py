@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from typing import Optional, Dict, Any
+from datetime import datetime, timedelta
 
 
 class Database:
@@ -44,13 +45,12 @@ class Database:
             # Определяем путь к schema.sql относительно текущего файла database.py
             current_dir = os.path.dirname(os.path.abspath(__file__))
             schema_path = os.path.join(current_dir, 'schema.sql')
-            
+
             if not os.path.exists(schema_path):
                 print(f"❌ Файл schema.sql не найден!")
                 print(f"   Искали в: {schema_path}")
                 print(f"   Текущая директория файла: {current_dir}")
                 print(f"   Рабочая директория: {os.getcwd()}")
-                print(f"   Содержимое директории database: {os.listdir(current_dir) if os.path.exists(current_dir) else 'не существует'}")
                 return
 
             print(f"📁 Чтение {schema_path}...")
@@ -82,6 +82,66 @@ class Database:
         finally:
             connection.close()
 
+    def check_and_update_schema(self):
+        """Проверка и обновление структуры базы данных"""
+        connection = self.get_connection()
+        if not connection:
+            return False
+
+        try:
+            cursor = connection.cursor()
+
+            # Проверяем существование таблицы schedule
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='schedule'")
+            if not cursor.fetchone():
+                print("❌ Таблица schedule не существует!")
+                return False
+
+            # Проверяем существование колонки lesson_type в таблице schedule
+            cursor.execute("PRAGMA table_info(schedule)")
+            columns = [column[1] for column in cursor.fetchall()]
+
+            if 'lesson_type' not in columns:
+                print("📝 Добавляем колонку lesson_type в таблицу schedule...")
+                cursor.execute('ALTER TABLE schedule ADD COLUMN lesson_type VARCHAR(20) DEFAULT "regular"')
+                connection.commit()
+                print("✅ Колонка lesson_type добавлена в таблицу schedule")
+
+            # Проверяем таблицу income для недостающих колонок
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='income'")
+            if cursor.fetchone():
+                cursor.execute("PRAGMA table_info(income)")
+                income_columns = [column[1] for column in cursor.fetchall()]
+
+                # Проверяем наличие колонки schedule_id
+                if 'schedule_id' not in income_columns:
+                    print("📝 Добавляем колонку schedule_id в таблицу income...")
+                    cursor.execute('ALTER TABLE income ADD COLUMN schedule_id INTEGER')
+                    print("✅ Колонка schedule_id добавлена в таблицу income")
+
+                # Проверяем наличие колонки status
+                if 'status' not in income_columns:
+                    print("📝 Добавляем колонку status в таблицу income...")
+                    cursor.execute('ALTER TABLE income ADD COLUMN status VARCHAR(20) DEFAULT "pending"')
+                    print("✅ Колонка status добавлена в таблицу income")
+
+                # Проверяем наличие колонки completed_at
+                if 'completed_at' not in income_columns:
+                    print("📝 Добавляем колонку completed_at в таблицу income...")
+                    cursor.execute('ALTER TABLE income ADD COLUMN completed_at DATETIME')
+                    print("✅ Колонка completed_at добавлена в таблицу income")
+
+            connection.commit()
+            return True
+
+        except sqlite3.Error as e:
+            print(f"❌ Ошибка проверки структуры базы данных: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+        finally:
+            connection.close()
+
     def authenticate_user(self, username: str, password: str):
         """Аутентификация пользователя"""
         connection = self.get_connection()
@@ -99,7 +159,6 @@ class Database:
 
             user_dict = dict(user)
             print(f"✅ Пользователь найден: {user_dict}")
-            print(f"🔑 Сравнение паролей: введен '{password}', в базе '{user_dict['password_hash']}'")
 
             # Простое сравнение паролей
             if user_dict['password_hash'] == password:
@@ -135,9 +194,11 @@ class Database:
             cursor.execute('''
                 INSERT INTO users (
                     username, password_hash, role, first_name, last_name, 
-                    exam_type, lesson_price, contact_info, created_by, is_active
-                ) VALUES (?, ?, 'student', ?, ?, ?, ?, ?, ?, 1)
-            ''', (username, password, first_name, last_name, exam_type, lesson_price, contact_info, tutor_id))
+                    exam_type, lesson_price, contact_info, created_by, is_active,
+                    schedule_day, schedule_time  # Добавляем поля расписания в пользователя
+                ) VALUES (?, ?, 'student', ?, ?, ?, ?, ?, ?, 1, ?, ?)
+            ''', (username, password, first_name, last_name, exam_type, lesson_price, contact_info, tutor_id,
+                  day_of_week, lesson_time))
 
             student_id = cursor.lastrowid
 
@@ -146,12 +207,12 @@ class Database:
                 INSERT INTO topics (title, description, created_by)
                 VALUES (?, ?, ?)
             ''', (
-            f'Занятия с {first_name} {last_name}', f'Регулярные занятия по подготовке к {exam_type.upper()}', tutor_id))
+                f'Занятия с {first_name} {last_name}', f'Регулярные занятия по подготовке к {exam_type.upper()}',
+                tutor_id))
 
             topic_id = cursor.lastrowid
 
             # Вычисляем время окончания (занятие длится 1 час)
-            from datetime import datetime, timedelta
             start_dt = datetime.strptime(lesson_time, '%H:%M')
             end_dt = start_dt + timedelta(hours=1)
             end_time = end_dt.strftime('%H:%M')
@@ -162,6 +223,17 @@ class Database:
                 VALUES (?, ?, ?, ?, ?, ?, 'active', 'regular')
             ''', (student_id, tutor_id, topic_id, day_of_week, lesson_time, end_time))
 
+            schedule_id = cursor.lastrowid
+
+            # Создаем запись о доходе (предварительную, без статуса paid)
+            current_date = datetime.now()
+            month_year = current_date.strftime('%Y-%m')
+
+            cursor.execute('''
+                INSERT INTO income (schedule_id, student_id, amount, payment_date, month_year, status)
+                VALUES (?, ?, ?, ?, ?, 'pending')
+            ''', (schedule_id, student_id, lesson_price, current_date.strftime('%Y-%m-%d'), month_year))
+
             connection.commit()
 
             print(f"✅ Ученик создан: {first_name} {last_name} (ID: {student_id})")
@@ -170,27 +242,31 @@ class Database:
 
         except sqlite3.Error as e:
             print(f"❌ Ошибка при создании ученика: {e}")
+            import traceback
+            traceback.print_exc()
             return False
         finally:
             connection.close()
 
-
     def get_tutor_students(self, tutor_id: int):
-        """Получение всех учеников репетитора с информацией о расписании"""
+        """Получение всех учеников репетитора без дублирования"""
         connection = self.get_connection()
         if not connection:
             return []
 
         try:
             cursor = connection.cursor()
+
+            # Используем GROUP BY чтобы получить уникальных учеников
             cursor.execute("""
                 SELECT 
                     u.id, u.username, u.first_name, u.last_name, 
                     u.exam_type, u.lesson_price, u.contact_info, u.created_at,
-                    s.day_of_week, s.start_time as lesson_time
+                    GROUP_CONCAT(DISTINCT s.day_of_week || ' ' || s.start_time) as schedule_info
                 FROM users u
                 LEFT JOIN schedule s ON u.id = s.student_id AND s.status = 'active'
                 WHERE u.created_by = ? AND u.role = 'student' AND u.is_active = 1
+                GROUP BY u.id
                 ORDER BY u.created_at DESC
             """, (tutor_id,))
 
@@ -198,11 +274,11 @@ class Database:
             for row in cursor.fetchall():
                 student = dict(row)
                 # Добавляем вычисляемые поля для отображения
-                student['progress'] = self.calculate_student_progress(student['id'])
                 student['lesson_count'] = self.get_student_lesson_count(student['id'])
+                student['schedule_info'] = student.get('schedule_info', '')
                 students.append(student)
 
-            print(f"📊 Найдено учеников: {len(students)}")
+            print(f"📊 Найдено уникальных учеников: {len(students)}")
             return students
 
         except sqlite3.Error as e:
@@ -212,7 +288,7 @@ class Database:
             connection.close()
 
     def update_schema(self):
-        """Обновление схемы базы данных - добавление exam_type"""
+        """Обновление схемы базы данных - добавление недостающих колонок"""
         connection = self.get_connection()
         if not connection:
             return False
@@ -220,7 +296,7 @@ class Database:
         try:
             cursor = connection.cursor()
 
-            # Проверяем существование колонки exam_type
+            # Проверяем существование колонки exam_type в users
             cursor.execute("PRAGMA table_info(users)")
             columns = [column[1] for column in cursor.fetchall()]
 
@@ -229,7 +305,7 @@ class Database:
                 print("📝 Добавляем колонку exam_type в таблицу users...")
                 cursor.execute('ALTER TABLE users ADD COLUMN exam_type VARCHAR(10) CHECK (exam_type IN ("oge", "ege"))')
                 connection.commit()
-                print("✅ Колонка exam_type добавлена")
+                print("✅ Колонка exam_type добавлена в таблицу users")
 
             return True
 
@@ -247,11 +323,11 @@ class Database:
 
         try:
             cursor = connection.cursor()
-            
+
             # Проверяем, существует ли пользователь tutor
             cursor.execute("SELECT id FROM users WHERE username = 'tutor'")
             tutor = cursor.fetchone()
-            
+
             if not tutor:
                 print("👤 Создаем пользователя tutor...")
                 cursor.execute("""
@@ -351,12 +427,6 @@ class Database:
         finally:
             connection.close()
 
-    def calculate_student_progress(self, student_id: int):
-        """Расчет прогресса ученика (заглушка)"""
-        # В реальном приложении здесь будет расчет прогресса на основе выполненных заданий
-        import random
-        return random.randint(50, 95)
-
     def get_student_lesson_count(self, student_id: int):
         """Получение количества занятий ученика"""
         connection = self.get_connection()
@@ -382,64 +452,101 @@ class Database:
         finally:
             connection.close()
 
-    # Добавьте в класс Database следующие методы:
-
-    def get_monthly_income(self, tutor_id, year, month):
-        """Получение дохода за конкретный месяц"""
+    def get_monthly_income_by_month(self, tutor_id, year, month):
+        """Получение дохода за конкретный месяц из таблицы income"""
         connection = self.get_connection()
         if not connection:
             return 0
 
         try:
             cursor = connection.cursor()
+            # Сумма по всем статусам за указанный месяц
             cursor.execute("""
-                SELECT COALESCE(SUM(l.amount), 0) as total_income
-                FROM income l
-                JOIN schedule s ON l.schedule_id = s.id
+                SELECT COALESCE(SUM(i.amount), 0) as total_income
+                FROM income i
+                JOIN schedule s ON i.schedule_id = s.id
                 WHERE s.tutor_id = ? 
-                AND strftime('%Y', l.payment_date) = ?
-                AND strftime('%m', l.payment_date) = ?
+                AND strftime('%Y', i.payment_date) = ?
+                AND strftime('%m', i.payment_date) = ?
             """, (tutor_id, str(year), str(month).zfill(2)))
 
             result = cursor.fetchone()
             return result['total_income'] if result else 0
 
         except sqlite3.Error as e:
-            print(f"❌ Ошибка получения дохода за месяц: {e}")
+            print(f"❌ Ошибка получения дохода за месяц {month}.{year}: {e}")
             return 0
         finally:
             connection.close()
 
-    def get_yearly_income(self, tutor_id, year):
-        """Получение дохода за год"""
+    def get_current_month_income(self, tutor_id):
+        """Получение дохода за текущий месяц (декабрь 2025)"""
+        current_date = datetime.now()
+        current_year = current_date.year
+        current_month = current_date.month
+
+        # Если сейчас декабрь 2025, считаем за декабрь
+        if current_year == 2025 and current_month == 12:
+            return self.get_monthly_income_by_month(tutor_id, 2025, 12)
+
+        return self.get_monthly_income_by_month(tutor_id, current_year, current_month)
+
+    def get_yearly_income_2025_sep_nov(self, tutor_id):
+        """Получение дохода за 2025 год (сентябрь-ноябрь)"""
+        current_date = datetime.now()
+        current_year = current_date.year
+
+        # Если не 2025 год, возвращаем 0
+        if current_year != 2025:
+            return 0
+
+        total_income = 0
+
+        # Суммируем доходы за сентябрь, октябрь, ноябрь 2025 года
+        # Независимо от текущего месяца, считаем только сентябрь-ноябрь
+        for month in range(9, 12):  # сентябрь(9), октябрь(10), ноябрь(11)
+            month_income = self.get_monthly_income_by_month(tutor_id, 2025, month)
+            total_income += month_income
+
+        return total_income
+
+    def get_monthly_forecast_december_2025(self, tutor_id):
+        """Прогноз дохода на декабрь 2025"""
         connection = self.get_connection()
         if not connection:
             return 0
 
         try:
             cursor = connection.cursor()
-            cursor.execute("""
-                SELECT COALESCE(SUM(l.amount), 0) as total_income
-                FROM income l
-                JOIN schedule s ON l.schedule_id = s.id
-                WHERE s.tutor_id = ? 
-                AND strftime('%Y', l.payment_date) = ?
-            """, (tutor_id, str(year)))
 
-            result = cursor.fetchone()
-            return result['total_income'] if result else 0
+            # Получаем всех активных учеников с их стоимостью занятий
+            cursor.execute("""
+                SELECT lesson_price, exam_type
+                FROM users 
+                WHERE created_by = ? AND role = 'student' AND is_active = 1
+            """, (tutor_id,))
+
+            students = cursor.fetchall()
+
+            # Прогноз на декабрь: 4 занятия в месяц на ученика
+            total_forecast = 0
+            for student in students:
+                lesson_price = student['lesson_price'] or 1500
+                total_forecast += lesson_price * 4
+
+            return total_forecast
 
         except sqlite3.Error as e:
-            print(f"❌ Ошибка получения дохода за год: {e}")
+            print(f"❌ Ошибка расчета прогноза на декабрь: {e}")
             return 0
         finally:
             connection.close()
 
-    def get_average_lesson_price(self, tutor_id):
-        """Получение средней стоимости занятия"""
+    def get_average_lesson_price_active(self, tutor_id):
+        """Средняя стоимость занятия по активным ученикам"""
         connection = self.get_connection()
         if not connection:
-            return 0
+            return 1500
 
         try:
             cursor = connection.cursor()
@@ -450,59 +557,13 @@ class Database:
             """, (tutor_id,))
 
             result = cursor.fetchone()
-            return result['avg_price'] if result and result['avg_price'] else 0
+            return result['avg_price'] if result and result['avg_price'] else 1500
 
         except sqlite3.Error as e:
             print(f"❌ Ошибка получения средней стоимости: {e}")
-            return 0
+            return 1500
         finally:
             connection.close()
-
-    def get_monthly_income_forecast(self, tutor_id, year, month):
-        """Прогноз дохода на месяц"""
-        connection = self.get_connection()
-        if not connection:
-            return 0
-
-        try:
-            cursor = connection.cursor()
-            # Получаем количество активных учеников
-            cursor.execute("""
-                SELECT COUNT(*) as student_count
-                FROM users 
-                WHERE created_by = ? AND role = 'student' AND is_active = 1
-            """, (tutor_id,))
-
-            student_count = cursor.fetchone()['student_count']
-
-            # Получаем среднюю стоимость занятия
-            avg_price = self.get_average_lesson_price(tutor_id)
-
-            # Прогноз: 4 занятия в месяц на ученика
-            forecast = student_count * 4 * avg_price
-
-            return forecast
-
-        except sqlite3.Error as e:
-            print(f"❌ Ошибка расчета прогноза: {e}")
-            return 0
-        finally:
-            connection.close()
-
-    def get_income_statistics(self, tutor_id):
-        """Полная статистика по доходам"""
-        from datetime import datetime
-
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-
-        return {
-            'current_month_income': self.get_monthly_income(tutor_id, current_year, current_month),
-            'monthly_forecast': self.get_monthly_income_forecast(tutor_id, current_year, current_month),
-            'average_lesson_price': self.get_average_lesson_price(tutor_id),
-            'yearly_income': self.get_yearly_income(tutor_id, current_year),
-            'student_count': self.get_active_students_count(tutor_id)
-        }
 
     def get_active_students_count(self, tutor_id):
         """Количество активных учеников"""
@@ -527,12 +588,8 @@ class Database:
         finally:
             connection.close()
 
-    # Добавьте в класс Database следующие методы:
-
-    # ЗАМЕНИТЕ метод get_tutor_quick_stats в database.py на этот:
-
     def get_tutor_quick_stats(self, tutor_id):
-        """Получение быстрой статистики для репетитора - УПРОЩЕННАЯ ВЕРСИЯ БЕЗ ТАБЛИЦЫ INCOME"""
+        """Получение быстрой статистики для репетитора (декабрь 2025)"""
         connection = self.get_connection()
         if not connection:
             return {}
@@ -581,7 +638,6 @@ class Database:
             print(f"📅 Занятий на неделю: {weekly_lessons}")
 
             # 4. Занятия на завтра
-            from datetime import datetime, timedelta
             tomorrow_date = datetime.now() + timedelta(days=1)
             day_map = {
                 0: 'monday', 1: 'tuesday', 2: 'wednesday', 3: 'thursday',
@@ -598,21 +654,20 @@ class Database:
             tomorrow_lessons = tomorrow_result['tomorrow_lessons'] if tomorrow_result else 0
             print(f"📆 Занятий на завтра: {tomorrow_lessons}")
 
-            # 5. Расчет доходов на основе учеников (без таблицы income)
-            cursor.execute("""
-                SELECT COALESCE(SUM(lesson_price), 0) as total_lesson_price
-                FROM users 
-                WHERE created_by = ? AND role = 'student' AND is_active = 1
-            """, (tutor_id,))
-            total_price_result = cursor.fetchone()
-            total_lesson_price = total_price_result['total_lesson_price'] if total_price_result else 0
+            # 5. Получаем среднюю стоимость занятия
+            avg_price = self.get_average_lesson_price_active(tutor_id)
 
-            # Прогноз: 4 занятия в месяц на ученика
-            monthly_forecast = total_lesson_price * 4
-            # Текущий доход: 70% от прогноза (имитация проведенных занятий)
-            monthly_income = monthly_forecast * 0.7
+            # 6. Прогноз на декабрь 2025
+            december_forecast = self.get_monthly_forecast_december_2025(tutor_id)
 
-            print(f"💰 Прогноз дохода: {monthly_forecast}, Текущий: {monthly_income}")
+            # 7. Доход за декабрь 2025 (текущий месяц)
+            current_month_income = self.get_current_month_income(tutor_id)
+
+            # 8. Доход за сентябрь-ноябрь 2025
+            yearly_income_2025 = self.get_yearly_income_2025_sep_nov(tutor_id)
+
+            print(
+                f"💰 Прогноз на декабрь: {december_forecast}, Доход за декабрь: {current_month_income}, Доход за сентябрь-ноябрь 2025: {yearly_income_2025}")
 
             stats = {
                 'total_students': total_students,
@@ -620,8 +675,10 @@ class Database:
                 'ege_students': ege_count,
                 'weekly_lessons': weekly_lessons,
                 'tomorrow_lessons': tomorrow_lessons,
-                'monthly_income': monthly_income,
-                'monthly_forecast': monthly_forecast
+                'monthly_forecast': december_forecast,
+                'current_month_income': current_month_income,
+                'yearly_income_2025': yearly_income_2025,
+                'average_lesson_price': avg_price
             }
 
             print(f"✅ Статистика собрана: {stats}")
@@ -635,7 +692,6 @@ class Database:
         finally:
             if connection:
                 connection.close()
-
 
     def get_tutor_students_for_schedule(self, tutor_id):
         """Получение учеников репетитора для выбора в расписании"""
@@ -667,7 +723,7 @@ class Database:
             if connection:
                 connection.close()
 
-    def create_schedule_entry(self, tutor_id, student_id, day_of_week, start_time, end_time, topic_id=None):
+    def create_schedule_entry(self, tutor_id, student_id, day_of_week, start_time, end_time, topic_title=None):
         """Создание новой записи в расписании"""
         connection = self.get_connection()
         if not connection:
@@ -676,13 +732,28 @@ class Database:
         try:
             cursor = connection.cursor()
 
-            # Если тема не указана, создаем тему по умолчанию
+            # Получаем или создаем тему для ученика
+            topic_id = self.get_or_create_topic_for_student(student_id, tutor_id, topic_title)
+
             if not topic_id:
-                cursor.execute("""
-                    INSERT INTO topics (title, description, created_by)
-                    VALUES (?, ?, ?)
-                """, (f'Занятие со студентом {student_id}', 'Индивидуальное занятие', tutor_id))
-                topic_id = cursor.lastrowid
+                print(f"❌ Не удалось получить тему для ученика {student_id}")
+                return False
+
+            # Проверяем, нет ли уже занятия в это время
+            cursor.execute("""
+                SELECT COUNT(*) as count
+                FROM schedule 
+                WHERE tutor_id = ? 
+                AND day_of_week = ? 
+                AND start_time = ? 
+                AND student_id = ?
+                AND status = 'active'
+            """, (tutor_id, day_of_week, start_time, student_id))
+
+            existing_lesson = cursor.fetchone()
+            if existing_lesson and existing_lesson['count'] > 0:
+                print(f"⚠️ У ученика {student_id} уже есть занятие в {day_of_week} в {start_time}")
+                return False
 
             # Создаем запись в расписании
             cursor.execute("""
@@ -693,7 +764,7 @@ class Database:
             schedule_id = cursor.lastrowid
             connection.commit()
 
-            print(f"✅ Создано занятие в расписании: ID {schedule_id}")
+            print(f"✅ Создано занятие в расписании: ученик {student_id}, {day_of_week} {start_time}-{end_time}")
             return schedule_id
 
         except sqlite3.Error as e:
@@ -704,15 +775,59 @@ class Database:
             if connection:
                 connection.close()
 
+    def get_or_create_topic_for_student(self, student_id, tutor_id, title=None):
+        """Получает или создает тему для ученика"""
+        connection = self.get_connection()
+        if not connection:
+            return None
+
+        try:
+            cursor = connection.cursor()
+
+            # Пробуем найти существующую тему для этого ученика
+            cursor.execute("""
+                SELECT t.id 
+                FROM topics t
+                JOIN schedule s ON t.id = s.topic_id
+                WHERE s.student_id = ? AND s.tutor_id = ?
+                LIMIT 1
+            """, (student_id, tutor_id))
+
+            existing_topic = cursor.fetchone()
+
+            if existing_topic:
+                print(f"✅ Найдена существующая тема для ученика {student_id}: ID {existing_topic['id']}")
+                return existing_topic['id']
+
+            # Если тема не найдена, создаем новую
+            topic_title = title or f'Занятие с учеником {student_id}'
+            cursor.execute("""
+                INSERT INTO topics (title, description, created_by)
+                VALUES (?, ?, ?)
+            """, (topic_title, 'Индивидуальное занятие', tutor_id))
+
+            topic_id = cursor.lastrowid
+            connection.commit()
+
+            print(f"✅ Создана новая тема для ученика {student_id}: ID {topic_id}")
+            return topic_id
+
+        except sqlite3.Error as e:
+            print(f"❌ Ошибка при работе с темой: {e}")
+            connection.rollback()
+            return None
+        finally:
+            if connection:
+                connection.close()
+
     def get_schedule_for_date(self, tutor_id, date):
-        """Получение расписания для конкретной даты - ВКЛЮЧАЕТ РЕГУЛЯРНЫЕ ЗАНЯТИЯ"""
+        """Получение расписания для конкретной даты - ТОЛЬКО АКТИВНЫЕ ЗАНЯТИЯ"""
         connection = self.get_connection()
         if not connection:
             return []
 
         try:
             # Определяем день недели для даты
-            from datetime import datetime
             date_obj = datetime.strptime(date, '%Y-%m-%d')
             day_map = {
                 0: 'monday',
@@ -727,7 +842,7 @@ class Database:
 
             cursor = connection.cursor()
 
-            # Получаем ВСЕ активные регулярные занятия на этот день недели
+            # Получаем только АКТИВНЫЕ занятия на этот день недели
             cursor.execute("""
                 SELECT 
                     s.id,
@@ -735,7 +850,6 @@ class Database:
                     s.start_time,
                     s.end_time,
                     s.status,
-                    s.lesson_type,
                     u.first_name,
                     u.last_name,
                     u.exam_type,
@@ -747,47 +861,14 @@ class Database:
                 WHERE s.tutor_id = ? 
                 AND s.day_of_week = ? 
                 AND s.status = 'active'
-                AND (s.lesson_type = 'regular' OR s.lesson_type IS NULL)
                 ORDER BY s.start_time
             """, (tutor_id, day_of_week))
 
-            regular_lessons = [dict(row) for row in cursor.fetchall()]
+            lessons = [dict(row) for row in cursor.fetchall()]
 
-            # Также получаем разовые занятия на конкретную дату
-            cursor.execute("""
-                SELECT 
-                    s.id,
-                    s.day_of_week,
-                    s.start_time,
-                    s.end_time,
-                    s.status,
-                    s.lesson_type,
-                    u.first_name,
-                    u.last_name,
-                    u.exam_type,
-                    u.lesson_price,
-                    t.title as topic_title,
-                    sl.lesson_date
-                FROM schedule s
-                JOIN single_lessons sl ON s.id = sl.schedule_id
-                JOIN users u ON s.student_id = u.id
-                LEFT JOIN topics t ON s.topic_id = t.id
-                WHERE s.tutor_id = ? 
-                AND sl.lesson_date = ?
-                AND s.status = 'active'
-                AND s.lesson_type = 'single'
-                ORDER BY s.start_time
-            """, (tutor_id, date))
+            print(f"📅 На {date} ({day_of_week}): {len(lessons)} активных занятий")
 
-            single_lessons = [dict(row) for row in cursor.fetchall()]
-
-            # Объединяем регулярные и разовые занятия
-            all_lessons = regular_lessons + single_lessons
-
-            print(
-                f"📅 На {date} ({day_of_week}): {len(regular_lessons)} регулярных + {len(single_lessons)} разовых = {len(all_lessons)} занятий")
-
-            return all_lessons
+            return lessons
 
         except sqlite3.Error as e:
             print(f"❌ Ошибка получения расписания на дату: {e}")
@@ -796,53 +877,139 @@ class Database:
             if connection:
                 connection.close()
 
-    def get_schedule_statistics(self, tutor_id, date):
-        """Получение статистики расписания"""
+    def get_income_details(self, tutor_id):
+        """Получение детализации доходов"""
         connection = self.get_connection()
         if not connection:
-            return {}
+            return []
 
         try:
             cursor = connection.cursor()
 
-            # Получаем занятия на указанную дату
-            schedule = self.get_schedule_for_date(tutor_id, date)
-            lessons_count = len(schedule)
+            cursor.execute("""
+                SELECT 
+                    i.id,
+                    i.amount,
+                    i.payment_date,
+                    i.status,
+                    u.first_name,
+                    u.last_name,
+                    u.exam_type,
+                    s.day_of_week,
+                    s.start_time
+                FROM income i
+                JOIN users u ON i.student_id = u.id
+                LEFT JOIN schedule s ON i.schedule_id = s.id
+                WHERE i.student_id IN (
+                    SELECT id FROM users WHERE created_by = ? AND role = 'student'
+                )
+                ORDER BY i.payment_date DESC
+                LIMIT 50
+            """, (tutor_id,))
 
-            # Считаем распределение по экзаменам
-            oge_count = sum(1 for lesson in schedule if lesson.get('exam_type') == 'oge')
-            ege_count = sum(1 for lesson in schedule if lesson.get('exam_type') == 'ege')
-
-            # Считаем общее время и прогноз дохода
-            total_minutes = 0
-            total_income = 0
-
-            for lesson in schedule:
-                # Вычисляем длительность занятия
-                start_time = datetime.strptime(lesson['start_time'], '%H:%M')
-                end_time = datetime.strptime(lesson['end_time'], '%H:%M')
-                duration = (end_time - start_time).seconds / 3600  # в часах
-                total_minutes += duration
-
-                # Получаем стоимость занятия ученика
-                cursor.execute("""
-                    SELECT lesson_price FROM users WHERE id = ?
-                """, (lesson.get('student_id'),))
-                student = cursor.fetchone()
-                if student:
-                    total_income += student['lesson_price']
-
-            return {
-                'lessons_count': lessons_count,
-                'oge_count': oge_count,
-                'ege_count': ege_count,
-                'total_hours': round(total_minutes, 1),
-                'income_forecast': total_income
-            }
+            income_details = [dict(row) for row in cursor.fetchall()]
+            return income_details
 
         except sqlite3.Error as e:
-            print(f"❌ Ошибка получения статистики расписания: {e}")
-            return {}
+            print(f"❌ Ошибка получения детализации доходов: {e}")
+            return []
         finally:
             if connection:
                 connection.close()
+
+    def complete_lesson(self, schedule_id, tutor_id):
+        """Завершение занятия и начисление дохода"""
+        connection = self.get_connection()
+        if not connection:
+            return False
+
+        try:
+            cursor = connection.cursor()
+
+            # Получаем информацию о занятии и ученике
+            cursor.execute("""
+                SELECT s.*, u.lesson_price, u.exam_type, u.first_name, u.last_name, u.id as student_id
+                FROM schedule s
+                JOIN users u ON s.student_id = u.id
+                WHERE s.id = ? AND s.tutor_id = ?
+            """, (schedule_id, tutor_id))
+
+            lesson = cursor.fetchone()
+            if not lesson:
+                print(f"❌ Занятие {schedule_id} не найдено или доступ запрещен")
+                return False
+
+            lesson_dict = dict(lesson)
+
+            # Проверяем, не было ли уже начислено за это занятие
+            cursor.execute("""
+                SELECT id FROM income 
+                WHERE schedule_id = ? AND status = 'paid'
+            """, (schedule_id,))
+
+            if cursor.fetchone():
+                print(f"⚠️ Доход за занятие {schedule_id} уже начислен")
+                return False
+
+            # Начисляем доход
+            current_date = datetime.now()
+            month_year = current_date.strftime('%Y-%m')
+            completed_at = current_date.strftime('%Y-%m-%d %H:%M:%S')
+
+            # Сначала пытаемся с completed_at
+            try:
+                cursor.execute("""
+                    INSERT INTO income (
+                        schedule_id, student_id, amount, payment_date, 
+                        month_year, status, completed_at
+                    ) VALUES (?, ?, ?, ?, ?, 'paid', ?)
+                """, (
+                    schedule_id, lesson_dict['student_id'], lesson_dict['lesson_price'],
+                    current_date.strftime('%Y-%m-%d'), month_year, completed_at
+                ))
+                income_id = cursor.lastrowid
+            except sqlite3.Error:
+                # Если нет колонки completed_at, создаем без нее
+                cursor.execute("""
+                    INSERT INTO income (
+                        schedule_id, student_id, amount, payment_date, 
+                        month_year, status
+                    ) VALUES (?, ?, ?, ?, ?, 'paid')
+                """, (
+                    schedule_id, lesson_dict['student_id'], lesson_dict['lesson_price'],
+                    current_date.strftime('%Y-%m-%d'), month_year
+                ))
+                income_id = cursor.lastrowid
+
+            # Помечаем занятие как завершенное
+            try:
+                cursor.execute("""
+                    UPDATE schedule 
+                    SET status = 'completed', completed_at = ?
+                    WHERE id = ?
+                """, (completed_at, schedule_id))
+            except:
+                # Если поля completed_at нет, просто обновляем статус
+                cursor.execute("""
+                    UPDATE schedule 
+                    SET status = 'completed'
+                    WHERE id = ?
+                """, (schedule_id,))
+
+            connection.commit()
+
+            print(f"✅ Занятие {schedule_id} завершено. Доход {lesson_dict['lesson_price']}₽ начислен")
+            return {
+                'income_id': income_id,
+                'amount': lesson_dict['lesson_price'],
+                'student_name': f"{lesson_dict['first_name']} {lesson_dict['last_name']}",
+                'exam_type': lesson_dict['exam_type'],
+                'completed_at': completed_at
+            }
+
+        except sqlite3.Error as e:
+            print(f"❌ Ошибка завершения занятия: {e}")
+            connection.rollback()
+            return False
+        finally:
+            connection.close()
